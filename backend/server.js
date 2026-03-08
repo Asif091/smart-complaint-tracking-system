@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const connectDB = require("./config/db");
+const { connectDB } = require("./config/db");
 
 dotenv.config();
 
@@ -14,10 +14,11 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// test route
+// routes
 app.get("/", (req, res) => {
   res.send("Smart Complaint Tracking System Backend Running");
 });
+app.use("/api/auth", require("./routes/auth"));
 
 const PORT = process.env.PORT || 5000;
 
