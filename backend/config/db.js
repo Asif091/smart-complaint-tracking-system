@@ -12,7 +12,7 @@ const connectDB = async () => {
   }
 
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri, { family: 4 });
     console.log("[DB] MongoDB connected");
   } catch (error) {
     console.error("[DB] Connection failed:", error.message);

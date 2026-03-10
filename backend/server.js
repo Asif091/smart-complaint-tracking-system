@@ -1,9 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const { connectDB } = require("./config/db");
 
+// Load environment variables BEFORE importing anything that reads process.env
 dotenv.config();
+
+const { connectDB } = require("./config/db");
 
 const app = express();
 
