@@ -18,12 +18,4 @@ const auth = (req, res, next) => {
   }
 };
 
-// Optional: use for routes that work with or without DB (e.g. prototype)
-const requireDB = (req, res, next) => {
-  if (!isConnected()) {
-    return res.status(503).json({ message: "Database unavailable. Run with MongoDB or use PROTOTYPE_MODE." });
-  }
-  next();
-};
-
-module.exports = { auth, JWT_SECRET, requireDB };
+module.exports = { auth, JWT_SECRET };

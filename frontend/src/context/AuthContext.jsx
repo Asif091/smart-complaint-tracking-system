@@ -2,57 +2,33 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = "complaint_token";
-const USER_KEY = "complaint_user";
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const savedUser = localStorage.getItem(USER_KEY);
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
     if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-        // Optionally validate token with /api/auth/me
-        fetch("/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((r) => (r.ok ? r.json() : Promise.reject()))
-          .then((data) => setUser(data.user))
-          .catch(() => {
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(USER_KEY);
-            setUser(null);
-          });
-      } catch {
-        setUser(null);
-      }
+      setUser(JSON.parse(savedUser));
     }
     setLoading(false);
   }, []);
 
   const login = (token, userData) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    }
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    const token = localStorage.getItem("token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
-  const getToken = () => localStorage.getItem(TOKEN_KEY);
+  const getToken = () => localStorage.getItem("token");
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, getToken }}>
