@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">Sign in</h1>
+        <h1 className="login-title">Login</h1>
         <p className="login-subtitle">Smart Complaint Tracking System</p>
         <form onSubmit={handleSubmit} className="login-form">
           {error && <div className="form-error">{error}</div>}

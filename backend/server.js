@@ -23,8 +23,15 @@ app.get("/", (req, res) => {
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
+const userRoutes = require("./routes/userRoutes");
+app.use("/api/users", userRoutes);
+
+const complaintRoutes = require("./routes/complaintRoutes");
+app.use("/api/complaints", complaintRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("JWT_SECRET:", process.env.JWT_SECRET);
 });

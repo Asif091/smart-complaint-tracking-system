@@ -303,3 +303,111 @@ input {
   min-height: 200px;
   color: var(--text-muted);
 }
+
+.user-page {
+  padding: 20px;
+}
+
+.page-title {
+  margin-bottom: 20px;
+}
+
+.user-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.filter-buttons button {
+  margin-right: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+
+.status.active {
+  color: green;
+}
+
+.status.inactive {
+  color: red;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+}
+.user-page {
+  padding: 20px;
+}
+
+.page-title {
+  margin-bottom: 20px;
+}
+
+/* Controls */
+.user-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.filter-buttons button {
+  margin-right: 10px;
+}
+
+/* Cards (like homepage feature-card) */
+.form-card,
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Inputs match login page */
+.form-card input,
+.form-card select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+td {
+  color: var(--text);
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Status colors */
+.status.active {
+  color: var(--accent);
+}
+
+.status.inactive {
+  color: var(--danger);
+}
