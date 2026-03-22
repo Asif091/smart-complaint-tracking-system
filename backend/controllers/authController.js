@@ -1,23 +1,3 @@
-const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const { auth, JWT_SECRET, requireDB } = require("../middleware/auth");
-const { isConnected } = require("../config/db");
-
-const PROTOTYPE_MODE = process.env.PROTOTYPE_MODE === "true";
-
-const router = express.Router();
-
-// Helper for prototype (no MongoDB) login
-const buildPrototypeUser = (email) => ({
-  id: "prototype-user",
-  name: "Prototype User",
-  email,
-  role: "staff",
-});
-
-// POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -142,6 +122,3 @@ router.post("/register", requireDB, async (req, res) => {
 });
 
 module.exports = router;
-
-const { login } = require("../controllers/authController");
-router.post("/login", login);
