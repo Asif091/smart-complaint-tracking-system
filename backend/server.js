@@ -20,6 +20,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Smart Complaint Tracking System Backend Running");
 });
+
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
@@ -35,7 +36,3 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log("JWT_SECRET:", process.env.JWT_SECRET);
 });
-
-const userRoutes = require("./routes/userRoutes");
-
-app.use("/api/users", userRoutes);
