@@ -20,7 +20,7 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
       if (!res.ok) {
         setError(data.message || "Login failed.");
         setLoading(false);
@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">Sign in</h1>
+        <h1 className="login-title">Login</h1>
         <p className="login-subtitle">Smart Complaint Tracking System</p>
         <form onSubmit={handleSubmit} className="login-form">
           {error && <div className="form-error">{error}</div>}

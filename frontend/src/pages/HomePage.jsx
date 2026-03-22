@@ -13,17 +13,14 @@ export default function HomePage() {
         <p className="hero-subtitle">
           Report, track, and resolve complaints in one place. Built for continuous improvement.
         </p>
-        {user ? (
-          <div className="hero-actions">
-            <span className="badge">Logged in as {user.name} ({user.role})</span>
-            <p className="hero-hint">More modules will be integrated here as the project grows.</p>
-          </div>
-        ) : (
+        {!user && (
           <div className="hero-actions">
             <Link to="/login" className="btn btn-primary btn-lg">
-              Sign in
+              Login
             </Link>
-            <p className="hero-hint">Create an account via API or seed script to get started.</p>
+            <p className="hero-hint">
+              Access your account to manage complaints and system activities.
+              </p>
           </div>
         )}
       </section>

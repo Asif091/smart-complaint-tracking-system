@@ -14,12 +14,49 @@ export default function Layout({ children }) {
           {!loading && (
             <>
               {user ? (
-                <span className="nav-user">
-                  <span className="nav-name">{user.name}</span>
-                  <button type="button" className="btn btn-ghost" onClick={logout}>
+                <>
+                  {/* 🔹 ROLE BASED MENU */}
+                  {user.role === "admin" && (
+                    <>
+                      <Link to="/">Home</Link>
+                      <Link to="/users">User Management</Link>
+                      <Link to="/complaints">Complaint Management</Link>
+                      <Link to="/reports">Reports & Analytics</Link>
+                    </>
+                  )}
+
+                  {user.role === "employee" && (
+                    <>
+                      <Link to="/">Home</Link>
+                      <Link to="/register">Register Complaint</Link>
+                      <Link to="/track">Track Complaint</Link>
+                      <Link to="/profile">Profile</Link>
+                      <Link to="/support">Support</Link>
+                    </>
+                  )}
+
+                  {user.role === "staff" && (
+                    <>
+                      <Link to="/">Home</Link>
+                      <Link to="/complaints">Complaints</Link>
+                      <Link to="/profile">Profile</Link>
+                      <Link to="/support">Support</Link>
+                    </>
+                  )}
+
+                  {/* 🔹 USER INFO */}
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      logout();
+                      window.location.href = "/";
+                    }}
+                  >
                     Logout
                   </button>
-                </span>
+                  
+                </>
               ) : (
                 <Link to="/login" className="btn btn-primary">
                   Login

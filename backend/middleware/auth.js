@@ -17,13 +17,17 @@ const auth = (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired token." });
   }
 };
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
-// Optional: use for routes that work with or without DB (e.g. prototype)
-const requireDB = (req, res, next) => {
-  if (!isConnected()) {
-    return res.status(503).json({ message: "Database unavailable. Run with MongoDB or use PROTOTYPE_MODE." });
-  }
-  next();
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    next();
+  };
 };
-
-module.exports = { auth, JWT_SECRET, requireDB };
+module.exports = { auth, authorize};
