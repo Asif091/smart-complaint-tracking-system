@@ -4,7 +4,8 @@ import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import { useAuth } from "./context/AuthContext";
-import Complaints from "./pages/Complaints";
+import SubmitComplaint from "./pages/SubmitComplaint";
+import MyComplaints from "./pages/MyComplaints";
 
 export default function App() {
   const { user } = useAuth();
@@ -16,29 +17,12 @@ export default function App() {
 
         <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/users"
-          element={user ? <UserManagement /> : <Navigate to="/" />}
-        />
+        <Route path="/users" element={user ? <UserManagement /> : <Navigate to="/" />}/>
 
-        <Route
-          path="/complaints"
-          element={user ? <Complaints /> : <Navigate to="/" />}
-        />
-
-        <Route
-          path="/register"
-          element={user ? <Complaints /> : <Navigate to="/" />}
-        />
+        <Route path="/submit-complaint" element={user ? <SubmitComplaint /> : <Navigate to="/" />} />
+        <Route path="/my-complaints" element={user ? <MyComplaints /> : <Navigate to="/" />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
-        
-        <Route 
-          path="/register" 
-          element={user ? <Complaints /> : <Navigate to="/" />} />
-        <Route 
-          path="/track" 
-          element={user ? <Complaints /> : <Navigate to="/" />} />
 
       </Routes>
     </Layout>

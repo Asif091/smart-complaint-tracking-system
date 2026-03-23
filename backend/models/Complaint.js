@@ -7,20 +7,29 @@ const complaintSchema = new mongoose.Schema(
     required: true
   },
 
-  description: {
+  category: 
+  {
     type: String,
     required: true
   },
 
-  status: {
+  priority:
+  {
     type: String,
-    enum: ["pending", "in-progress", "resolved"],
-    default: "pending"
+    default: "Medium"
   },
 
-  createdBy: {
+  status:
+  {
+    type: String,
+    default: "Pending"
+  },
+
+  submittedBy: 
+  {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
+    required: true
   }
 },
 {

@@ -1,13 +1,12 @@
 const express = require("express");
+const { auth } = require("../middleware/auth");
+const { submitComplaint, getMyComplaints, getComplaintById } = require("../controllers/complaintController");
 const router = express.Router();
 
-const { auth } = require("../middleware/auth");
+router.use(auth);
 
-const { createComplaint, getComplaints } = require("../controllers/complaintController");
-
-// create complaint
-router.post("/", auth, createComplaint);
-
-router.get("/", auth, getComplaints);
+router.post("/", submitComplaint);
+router.get("/my", getMyComplaints);
+router.get("/:id", getComplaintById);
 
 module.exports = router;

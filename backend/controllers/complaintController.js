@@ -1,31 +1,64 @@
 const Complaint = require("../models/Complaint");
 
-exports.createComplaint = async (req, res) => {
+const submitComplaint = async (req, res) => {
   try {
-    
-    if (req.user.role !== "employee") {
-      return res.status(403).json({ message: "Only employees can create complaints" });
+    const { title, description, category, priority } = req.body;
+
+    if (!title || !description || !category) {
+      return res.status(400).json({ message: "Title, description and category are required" });
     }
 
-    const { title, description } = req.body;
-
-    const complaint = await require("../models/Complaint").create({
+    const complaint = await Complaint.create({
       title,
       description,
-      createdBy: req.user.id, 
+      category,
+      priority: priority || "Medium",
+      submittedBy: req.user.id
     });
 
-    res.status(201).json(complaint);
-  } catch (err) {
-    res.status(500).json({ message: "Error creating complaint" });
+    res.status(201).json({ success: true, complaint });
+
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
-exports.getComplaints = async (req, res) => {
-  try {
-    const complaints = await require("../models/Complaint").find();
 
-    res.json(complaints);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching complaints" });
+const getMyComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ submittedBy: req.user.id }).sort({ createdAt: -1 });
+
+    res.json({ complaints });
+
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
+};
+
+const getComplaintById = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id).populate("submittedBy", "name email");
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    if (complaint.submittedBy._id.toString() !== req.user.id && 
+        req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    res.json({ complaint });
+
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {
+  submitComplaint,
+  getMyComplaints,
+  getComplaintById
 };
