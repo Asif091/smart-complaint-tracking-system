@@ -81,7 +81,7 @@ const register = async (req, res) => {
     const user = await User.create({ name, email, password: hashed, role });
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.status(201).json({

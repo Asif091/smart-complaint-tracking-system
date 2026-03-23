@@ -57,8 +57,35 @@ const getComplaintById = async (req, res) => {
   }
 };
 
+const updateComplaintStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can update status" });
+    }
+
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    complaint.status = status;
+
+    await complaint.save();
+
+    res.json({ message: "Status updated successfully", complaint });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   submitComplaint,
   getMyComplaints,
-  getComplaintById
+  getComplaintById,
+  updateComplaintStatus
 };
+
