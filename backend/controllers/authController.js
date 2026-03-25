@@ -1,29 +1,15 @@
-router.post("/login", async (req, res) => {
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+// /api/auth/login
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password required." });
     }
 
-    // If DB is not connected
-    if (!isConnected()) {
-      if (!PROTOTYPE_MODE) {
-        return res
-          .status(503)
-          .json({ message: "Database unavailable. Enable PROTOTYPE_MODE or connect MongoDB." });
-      }
-
-      // Prototype mode: accept any non-empty email/password and return a fake user
-      const user = buildPrototypeUser(email);
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role, name: user.name },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-      return res.json({ token, user, prototype: true });
-    }
-
-    // Normal path: real MongoDB login
     const user = await User.findOne({ email, status: "active" });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password." });
@@ -34,7 +20,7 @@ router.post("/login", async (req, res) => {
     }
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role, name: user.name },
-      JWT_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.json({
@@ -50,31 +36,18 @@ router.post("/login", async (req, res) => {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error." });
   }
-});
+};
 
-// POST /api/auth/logout — stateless JWT: client discards token; this endpoint for consistency / future blacklist
-router.post("/logout", auth, (req, res) => {
+
+// /api/auth/logout
+const logout = (req, res) => {
   res.json({ message: "Logged out successfully." });
-});
+};
 
-// GET /api/auth/me — current user (for frontend to restore session)
-router.get("/me", auth, async (req, res) => {
+
+// /api/auth/me
+const getMe = async (req, res) => {
   try {
-    // If DB is not connected
-    if (!isConnected()) {
-      if (PROTOTYPE_MODE && req.user) {
-        // In prototype mode, trust the data from the token
-        const { id = "prototype-user", name = "Prototype User", email, role = "staff" } = req.user;
-        return res.json({
-          user: { id, name, email, role },
-        });
-      }
-      return res
-        .status(503)
-        .json({ message: "Database unavailable. Enable PROTOTYPE_MODE or connect MongoDB." });
-    }
-
-    // Normal path: real MongoDB lookup
     const user = await User.findById(req.user.id).select("-password");
     if (!user || user.status !== "active") {
       return res.status(401).json({ message: "User not found or inactive." });
@@ -90,11 +63,11 @@ router.get("/me", auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Server error." });
   }
-});
+};
 
-// POST /api/auth/register — for prototype: seed first user (optional, can remove in production)
-router.post("/register", requireDB, async (req, res) => {
-  if (!isConnected()) return res.status(503).json({ message: "Database unavailable." });
+
+// /api/auth/register 
+const register = async (req, res) => {
   try {
     const { name, email, password, role = "staff" } = req.body;
     if (!name || !email || !password) {
@@ -108,17 +81,23 @@ router.post("/register", requireDB, async (req, res) => {
     const user = await User.create({ name, email, password: hashed, role });
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.status(201).json({
-      token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
-    });
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ message: "Server error." });
   }
-});
+};
 
-module.exports = router;
+
+module.exports = {  login, logout, getMe, register };

@@ -17,6 +17,7 @@ const auth = (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired token." });
   }
 };
+
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -30,4 +31,4 @@ const authorize = (...roles) => {
     next();
   };
 };
-module.exports = { auth, authorize};
+module.exports = { auth, authorize };

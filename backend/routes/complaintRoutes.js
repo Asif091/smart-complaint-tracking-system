@@ -1,4 +1,6 @@
 const express = require("express");
+const { auth } = require("../middleware/auth");
+const { submitComplaint, getMyComplaints, getComplaintById, updateComplaintStatus } = require("../controllers/complaintController");
 const router = express.Router();
 
 const { auth } = require("../middleware/auth");

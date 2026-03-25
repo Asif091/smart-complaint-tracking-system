@@ -1,15 +1,14 @@
 const Complaint = require("../models/Complaint");
 
-exports.createComplaint = async (req, res) => {
+const submitComplaint = async (req, res) => {
   try {
-    
-    if (req.user.role !== "employee") {
-      return res.status(403).json({ message: "Only employees can create complaints" });
+    const { title, description, category, priority } = req.body;
+
+    if (!title || !description || !category) {
+      return res.status(400).json({ message: "Title, description and category are required" });
     }
 
-    const { title, description } = req.body;
-
-    const complaint = await require("../models/Complaint").create({
+    const complaint = await Complaint.create({
       title,
       description,
       createdBy: req.user.id,

@@ -5,7 +5,8 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { useAuth } from "./context/AuthContext";
-import Complaints from "./pages/Complaints";
+import SubmitComplaint from "./pages/SubmitComplaint";
+import MyComplaints from "./pages/MyComplaints";
 
 export default function App() {
   const { user } = useAuth();
@@ -17,10 +18,7 @@ export default function App() {
 
         <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/users"
-          element={user ? <UserManagement /> : <Navigate to="/" />}
-        />
+        <Route path="/users" element={user ? <UserManagement /> : <Navigate to="/" />}/>
 
         <Route
           path="/complaints"

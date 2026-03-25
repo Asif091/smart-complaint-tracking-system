@@ -20,7 +20,8 @@ export default function Layout({ children }) {
                     <>
                       <Link to="/">Home</Link>
                       <Link to="/users">User Management</Link>
-                      <Link to="/complaints">Complaint Management</Link>
+                      <Link to="/submit-complaint">Submit Complaint</Link>
+                      <Link to="/my-complaints">All Complaints</Link>
                       <Link to="/reports">Reports & Analytics</Link>
                     </>
                   )}
@@ -28,23 +29,22 @@ export default function Layout({ children }) {
                   {user.role === "employee" && (
                     <>
                       <Link to="/">Home</Link>
-                      <Link to="/register">Register Complaint</Link>
-                      <Link to="/track">Track Complaint</Link>
+                      <Link to="/submit-complaint">Submit Complaint</Link>
+                      <Link to="/my-complaints">My Complaints</Link>
                       <Link to="/profile">Profile</Link>
-                      <Link to="/support">Support</Link>
                     </>
                   )}
 
                   {user.role === "staff" && (
                     <>
                       <Link to="/">Home</Link>
-                      <Link to="/complaints">Complaints</Link>
+                      <Link to="/my-complaints">Complaints</Link>
                       <Link to="/profile">Profile</Link>
-                      <Link to="/support">Support</Link>
                     </>
                   )}
 
                   {/* 🔹 USER INFO */}
+                  <span className="nav-name">{user.name} ({user.role})</span>
                   <button
                     type="button"
                     className="btn btn-ghost"

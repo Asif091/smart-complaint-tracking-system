@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
-// ✅ Update Profile
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -20,7 +19,6 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// ✅ Change Password
 exports.changePassword = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -44,7 +42,6 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// ✅ Get all users (Admin)
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -54,7 +51,6 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-// ✅ Create new user (Admin)
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -116,7 +112,6 @@ exports.deactivateUser = async (req, res) => {
   }
 };
 
-// ✅ Update user (Admin)
 exports.updateUser = async (req, res) => {
   try {
     const { name, email, role } = req.body;
