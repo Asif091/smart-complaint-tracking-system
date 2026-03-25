@@ -1,4 +1,10 @@
 const mongoose = require("mongoose");
+const dns = require("dns");
+
+// Fix DNS resolution on Windows
+try {
+  dns.setServers(["8.8.8.8", "8.8.4.4"]);
+} catch (e) {}
 
 const connectDB = async () => {
   const uri = process.env.MONGO_URI;
@@ -8,7 +14,7 @@ const connectDB = async () => {
   }
 
   try {
-    await mongoose.connect(uri, { family: 4 });
+    await mongoose.connect(uri);
     console.log("[DB] MongoDB connected");
   } catch (error) {
     console.error("[DB] Connection failed:", error.message);

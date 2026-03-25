@@ -83,14 +83,26 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// ✅ Deactivate user (Admin)
+// ✅ Deactivate/Activate user (Admin) - Toggles status
 exports.deactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Get current user to determine new status
+    const currentUser = await User.findById(id);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    console.log("Current user status:", currentUser.status);
+    
+    // Toggle status: if active, make inactive; if inactive, make active
+    const newStatus = currentUser.status === "active" ? "inactive" : "active";
+    console.log("New status:", newStatus);
 
     const user = await User.findByIdAndUpdate(
       id,
-      { status: "inactive" },
+      { status: newStatus },
       { new: true }
     );
 
@@ -98,7 +110,7 @@ exports.deactivateUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ message: "User deactivated", user });
+    res.json({ message: `User ${newStatus === "active" ? "activated" : "deactivated"}`, user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

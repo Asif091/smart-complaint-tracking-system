@@ -3,7 +3,7 @@ import axios from "axios";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
-  const [roleFilter, setRoleFilter] = useState("employee");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   //  NEW STATES
   const [showForm, setShowForm] = useState(false);
@@ -17,6 +17,7 @@ export default function UserManagement() {
   const token = localStorage.getItem("token");
 
   const [editingUser, setEditingUser] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -38,6 +39,7 @@ export default function UserManagement() {
 
   //  NEW FUNCTION
   const handleCreateUser = async () => {
+    setError("");
     try {
       await axios.post(
         "http://localhost:5000/api/users",
@@ -57,6 +59,7 @@ export default function UserManagement() {
       fetchUsers();
     } catch (err) {
       console.error(err);
+      setError(err.response?.data?.message || "Error creating user");
     }
   };
     const handleUpdateUser = async () => {
@@ -78,11 +81,14 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeactivate = async (id) => {
+  const handleToggleStatus = async (id, currentStatus) => {
     try {
+      // If user is active, deactivate. If inactive, reactivate
+      const newStatus = currentStatus === "active" ? "inactive" : "active";
+      
       await axios.patch(
         `http://localhost:5000/api/users/${id}/status`,
-        {},
+        { status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -96,9 +102,9 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter(
-    (user) => user.role === roleFilter
-  );
+  const filteredUsers = roleFilter === "all" 
+    ? users 
+    : users.filter((user) => user.role === roleFilter);
 
   return (
     <div className="user-page">
@@ -106,6 +112,8 @@ export default function UserManagement() {
 
       <div className="user-controls">
         <div className="filter-buttons">
+          <button onClick={() => setRoleFilter("all")}>All</button>
+          <button onClick={() => setRoleFilter("admin")}>Admin</button>
           <button onClick={() => setRoleFilter("employee")}>Employees</button>
           <button onClick={() => setRoleFilter("staff")}>Staff</button>
         </div>
@@ -118,6 +126,7 @@ export default function UserManagement() {
       {/* CREATE FORM */}
       {showForm && (
         <div className="form-card">
+          {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
           <input
             placeholder="Name"
             value={newUser.name}
@@ -139,6 +148,7 @@ export default function UserManagement() {
             value={newUser.role}
             onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
           >
+            <option value="admin">Admin</option>
             <option value="employee">Employee</option>
             <option value="staff">Staff</option>
           </select>
@@ -174,6 +184,7 @@ export default function UserManagement() {
               setEditingUser({ ...editingUser, role: e.target.value })
             }
           >
+            <option value="admin">Admin</option>
             <option value="employee">Employee</option>
             <option value="staff">Staff</option>
           </select>
@@ -209,9 +220,13 @@ export default function UserManagement() {
                 <td>
                   <button onClick={() => setEditingUser(user)}>Edit</button>
 
-                  {user.status === "active" && (
-                    <button onClick={() => handleDeactivate(user._id)}>
+                  {user.status === "active" ? (
+                    <button onClick={() => handleToggleStatus(user._id, user.status)} className="btn-danger">
                       Deactivate
+                    </button>
+                  ) : (
+                    <button onClick={() => handleToggleStatus(user._id, user.status)} className="btn-success">
+                      Activate
                     </button>
                   )}
                 </td>

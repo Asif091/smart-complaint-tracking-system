@@ -2,7 +2,9 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { auth } = require("../middleware/auth");  
+const { auth } = require("../middleware/auth");
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key";
 
 const router = express.Router();
 
@@ -24,7 +26,7 @@ router.post("/login", async (req, res) => {
     }
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role, name: user.name },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.json({
@@ -104,6 +106,3 @@ router.post("/register", async (req, res) => {
 });
 
 module.exports = router;
-
-const { login } = require("../controllers/authController");
-router.post("/login", login);
