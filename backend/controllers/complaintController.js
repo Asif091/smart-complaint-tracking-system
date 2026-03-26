@@ -1,6 +1,6 @@
 const Complaint = require("../models/Complaint");
 
-const submitComplaint = async (req, res) => {
+exports.submitComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
 
@@ -11,21 +11,25 @@ const submitComplaint = async (req, res) => {
     const complaint = await Complaint.create({
       title,
       description,
+      category,
+      priority: priority || "Medium",
       createdBy: req.user.id,
       status: "pending"
     });
 
     res.status(201).json(complaint);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error creating complaint" });
   }
 };
 
 exports.getComplaints = async (req, res) => {
   try {
-    const complaints = await require("../models/Complaint").find();
+    const complaints = await Complaint.find().populate("createdBy", "name email");
     res.json(complaints);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching complaints" });
   }
 };
@@ -33,11 +37,13 @@ exports.getComplaints = async (req, res) => {
 // Get personal complaint history - for employees to see their own complaints
 exports.getMyComplaints = async (req, res) => {
   try {
-    const complaints = await require("../models/Complaint")
+    const complaints = await Complaint
       .find({ createdBy: req.user.id })
+      .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
     res.json(complaints);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching your complaints" });
   }
 };
@@ -48,14 +54,12 @@ exports.updateComplaint = async (req, res) => {
     const { id } = req.params;
     const { title, description } = req.body;
     
-    // Find the complaint first
-    const complaint = await require("../models/Complaint").findById(id);
+    const complaint = await Complaint.findById(id);
     
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
     }
     
-    // Only allow editing if the user created it and it's still pending (not assigned)
     if (complaint.createdBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "You can only edit your own complaints" });
     }
@@ -64,8 +68,7 @@ exports.updateComplaint = async (req, res) => {
       return res.status(400).json({ message: "Cannot edit complaint after it has been assigned" });
     }
     
-    // Update the complaint
-    const updatedComplaint = await require("../models/Complaint").findByIdAndUpdate(
+    const updatedComplaint = await Complaint.findByIdAndUpdate(
       id,
       { title, description },
       { new: true }
@@ -73,6 +76,47 @@ exports.updateComplaint = async (req, res) => {
     
     res.json(updatedComplaint);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error updating complaint" });
   }
 };
+
+// Assign complaint to department (Admin only) - FEATURE 3
+exports.assignToDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { department } = req.body;
+
+    // Admin check
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can assign complaints" });
+    }
+
+    const validDepartments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
+    if (!validDepartments.includes(department)) {
+      return res.status(400).json({ message: "Invalid department" });
+    }
+
+    const complaint = await Complaint.findById(id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    complaint.assignedDepartment = department;
+    complaint.assignedAt = new Date();
+
+    if (complaint.status === "pending") {
+      complaint.status = "assigned";
+    }
+
+    await complaint.save();
+
+    res.json({ message: `Complaint assigned to ${department} department successfully`, complaint });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
