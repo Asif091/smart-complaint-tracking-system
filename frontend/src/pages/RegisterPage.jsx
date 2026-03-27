@@ -15,7 +15,7 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role }),
@@ -27,7 +27,7 @@ export default function RegisterPage() {
         return;
       }
       // Login after register
-      const loginRes = await fetch("/api/auth/login", {
+      const loginRes = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

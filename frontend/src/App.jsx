@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { useAuth } from "./context/AuthContext";
+import Complaints from "./pages/Complaints";
 import SubmitComplaint from "./pages/SubmitComplaint";
 import MyComplaints from "./pages/MyComplaints";
 
@@ -14,36 +15,34 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={ <HomePage /> } />
+        <Route path="/" element={<HomePage />} />
 
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/users" element={user ? <UserManagement /> : <Navigate to="/" />}/>
 
+        {/* Admin only - for assigning complaints */}
         <Route
           path="/complaints"
-          element={user ? <Complaints /> : <Navigate to="/" />}
+          element={user?.role === "admin" ? <Complaints /> : <Navigate to="/" />}
         />
 
-        {/* Route for employees to register complaints */}
         <Route
           path="/register"
-          element={user?.role === "employee" ? <Complaints /> : <Navigate to="/" />}
-        />
-
-        {/* Route for employees to track their complaints */}
-        <Route
-          path="/track"
-          element={user?.role === "employee" ? <Complaints /> : <Navigate to="/" />}
+          element={!user || user?.role === "admin" ? <RegisterPage /> : <Navigate to="/" />}
         />
 
         <Route
-          path="/signup"
-          element={!user ? <RegisterPage /> : <Navigate to="/" />}
+          path="/submit-complaint"
+          element={user ? <SubmitComplaint /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/my-complaints"
+          element={user ? <MyComplaints /> : <Navigate to="/login" />}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
     </Layout>
   );

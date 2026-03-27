@@ -12,7 +12,6 @@ exports.submitComplaint = async (req, res) => {
       title,
       description,
       category,
-      priority: priority || "Medium",
       createdBy: req.user.id,
       status: "pending"
     });
@@ -119,4 +118,3 @@ exports.assignToDepartment = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-

@@ -23,6 +23,16 @@ export default function HomePage() {
               </p>
           </div>
         )}
+        {user?.role === "admin" && (
+          <div className="hero-actions">
+            <Link to="/signup" className="btn btn-primary btn-lg">
+              Register New User
+            </Link>
+            <p className="hero-hint">
+              Create new staff or employee accounts.
+              </p>
+          </div>
+        )}
       </section>
       <section className="features">
         <div className="feature-card">
