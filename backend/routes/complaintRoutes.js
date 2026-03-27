@@ -1,20 +1,22 @@
 const express = require("express");
 const router = express.Router();
-
-const { auth } = require("../middleware/auth");
+const { auth, authorize } = require("../middleware/auth");
 
 const { getComplaints, getMyComplaints, updateComplaint } = require("../controllers/complaintController");
 
 // create complaint
 router.post("/", auth, require("../controllers/complaintController").submitComplaint);
 
-// get all complaints (for admin/staff)
+// Get all complaints
 router.get("/", auth, getComplaints);
 
-// get personal complaint history
+// Get personal complaints
 router.get("/my-complaints", auth, getMyComplaints);
 
-// update complaint (only before assignment)
+// Update complaint (before assignment)
 router.put("/:id", auth, updateComplaint);
+
+// Assign to department (Admin only)
+router.put("/:id/assign-department", auth, authorize("admin"), assignToDepartment);
 
 module.exports = router;

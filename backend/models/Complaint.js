@@ -26,7 +26,23 @@ const complaintSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
+    },
+
+    assignedDepartment: {
+      type: String,
+      enum: ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"],
+      default: null
+    },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+    assignedAt: {
+      type: Date,
+      default: null
     }
+
   },
   {
     timestamps: true
