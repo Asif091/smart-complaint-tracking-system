@@ -37,6 +37,7 @@ export default function Layout({ children }) {
                   {user.role === "staff" && (
                     <>
                       <Link to="/">Home</Link>
+                      <Link to="/my-complaints">Complaints</Link>
                       <Link to="/profile">Profile</Link>
                     </>
                   )}

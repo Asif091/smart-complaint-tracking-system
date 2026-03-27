@@ -27,9 +27,10 @@ export default function App() {
           element={user?.role === "admin" ? <Complaints /> : <Navigate to="/" />}
         />
 
+        {/* Route for employees to register complaints */}
         <Route
           path="/register"
-          element={!user || user?.role === "admin" ? <RegisterPage /> : <Navigate to="/" />}
+          element={user?.role === "employee" ? <Complaints /> : <Navigate to="/" />}
         />
 
         <Route
