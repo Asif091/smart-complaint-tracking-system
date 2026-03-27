@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, role }),
@@ -29,20 +29,6 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       }
-<<<<<<< HEAD
-      // Login after register
-      const loginRes = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (loginRes.ok) {
-        localStorage.setItem("token", loginData.token);
-        localStorage.setItem("user", JSON.stringify(loginData.user));
-        navigate("/", { replace: true });
-        window.location.reload();
-=======
       // If admin is creating a user, don't auto-login
       if (user?.role === "admin") {
         setSuccess("User created successfully!");
@@ -50,7 +36,6 @@ export default function RegisterPage() {
         setEmail("");
         setPassword("");
         setRole("staff");
->>>>>>> f3f848c8b42e2748f2398d8f7cbedc507c696f65
       } else {
         // Login after register for new users
         const loginRes = await fetch("/api/auth/login", {
