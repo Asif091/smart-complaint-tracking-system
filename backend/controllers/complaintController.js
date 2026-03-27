@@ -1,6 +1,6 @@
 const Complaint = require("../models/Complaint");
 
-const submitComplaint = async (req, res) => {
+exports.submitComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
 
@@ -11,6 +11,7 @@ const submitComplaint = async (req, res) => {
     const complaint = await Complaint.create({
       title,
       description,
+      category,
       createdBy: req.user.id,
       status: "pending"
     });

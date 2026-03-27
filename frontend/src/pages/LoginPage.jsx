@@ -65,9 +65,7 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-        <p className="login-footer">
-          <Link to="/signup">Register new account</Link>
-        </p>
+
         <p className="login-footer">
           <Link to="/">← Back to home</Link>
         </p>
