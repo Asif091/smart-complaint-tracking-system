@@ -1,7 +1,6 @@
 const Complaint = require("../models/Complaint");
 
 exports.submitComplaint = async (req, res) => {
-exports.submitComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
 
