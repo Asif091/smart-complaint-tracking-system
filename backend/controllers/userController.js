@@ -53,11 +53,19 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, department } = req.body;  // <<<<<< NEW: added department
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "All fields required" });
     }
+    if (role === "admin") {
+      return res.status(403).json({ message: "Cannot create admin users. Contact developer." });
+    }
+    // <<<<<< NEW - START: Validate department for employee role
+    if (role === "employee" && !department) {
+      return res.status(400).json({ message: "Department is required for employees" });
+    }
+    // <<<<<< NEW - END
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -66,12 +74,20 @@ exports.createUser = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
+    // <<<<<< NEW - START: Build user data with department for employees
+    const userData = {
       name,
       email,
       password: hashed,
       role,
-    });
+    };
+
+    if (role === "employee" && department) {
+      userData.department = department;
+    }
+    // <<<<<< NEW - END
+
+    const user = await User.create(userData);  // <<<<<< NEW: using userData instead of direct object
 
     res.status(201).json(user);
   } catch (err) {
@@ -79,7 +95,6 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// ✅ Deactivate/Activate user (Admin) - Toggles status
 exports.deactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -115,13 +130,15 @@ exports.deactivateUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { name, email, role } = req.body;
-
+    if (role === "admin") {
+      return res.status(403).json({ message: "Cannot assign admin role. Contact developer." });
+    }
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { name, email, role },
       { new: true }
     );
-
+    
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

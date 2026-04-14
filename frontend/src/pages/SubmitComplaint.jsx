@@ -12,7 +12,17 @@ export default function SubmitComplaint() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
 
-  const categories = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
+  // <<<<<< NEW - Change these to actual issue categories, not departments
+  const categories = [
+    "Hardware Issue",
+    "Software Issue", 
+    "Network Problem",
+    "Salary Dispute",
+    "Leave Request",
+    "Workplace Harassment",
+    "Policy Suggestion",
+    "Other"
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +48,8 @@ export default function SubmitComplaint() {
       });
 
       if (!res.ok) {
-        setError("Submission failed");
+        const data = await res.json();
+        setError(data.message || "Submission failed");
         setLoading(false);
         return;
       }

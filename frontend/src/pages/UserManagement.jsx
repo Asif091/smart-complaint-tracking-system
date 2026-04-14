@@ -11,7 +11,8 @@ export default function UserManagement() {
     name: "",
     email: "",
     password: "",
-    role: "employee"
+    role: "employee",
+    department: ""
   });
 
   const token = localStorage.getItem("token");
@@ -41,9 +42,15 @@ export default function UserManagement() {
   const handleCreateUser = async () => {
     setError("");
     try {
+      // Prepare data to send (include department only if role is employee)
+      const userToSend = { ...newUser };
+      if (userToSend.role !== "employee") {
+        delete userToSend.department;
+      }
+
       await axios.post(
         "http://localhost:5000/api/users",
-        newUser,
+        userToSend,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -53,7 +60,7 @@ export default function UserManagement() {
 
       // reset form
       setShowForm(false);
-      setNewUser({ name: "", email: "", password: "", role: "employee" });
+      setNewUser({ name: "", email: "", password: "", role: "employee", department: "" });
 
       // refresh users
       fetchUsers();
@@ -148,10 +155,25 @@ export default function UserManagement() {
             value={newUser.role}
             onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
           >
-            <option value="admin">Admin</option>
             <option value="employee">Employee</option>
             <option value="staff">Staff</option>
           </select>
+
+          {/* Department dropdown (only for employee role) */}
+          {newUser.role === "employee" && (
+            <select
+              value={newUser.department}
+              onChange={(e) => setNewUser({ ...newUser, department: e.target.value })}
+              required
+            >
+              <option value="">Select Department</option>
+              <option value="HR">HR</option>
+              <option value="IT">IT</option>
+              <option value="Finance">Finance</option>
+              <option value="Marketing & Sales">Marketing & Sales</option>
+              <option value="Software & Product Development">Software & Product Development</option>
+            </select>
+          )}
 
           <button className="btn-primary" onClick={handleCreateUser}>
             Submit
@@ -184,10 +206,26 @@ export default function UserManagement() {
               setEditingUser({ ...editingUser, role: e.target.value })
             }
           >
-            <option value="admin">Admin</option>
             <option value="employee">Employee</option>
             <option value="staff">Staff</option>
           </select>
+
+          {/* Department dropdown in edit form for employees */}
+          {editingUser.role === "employee" && (
+            <select
+              value={editingUser.department || ""}
+              onChange={(e) =>
+                setEditingUser({ ...editingUser, department: e.target.value })
+              }
+            >
+              <option value="">Select Department</option>
+              <option value="HR">HR</option>
+              <option value="IT">IT</option>
+              <option value="Finance">Finance</option>
+              <option value="Marketing & Sales">Marketing & Sales</option>
+              <option value="Software & Product Development">Software & Product Development</option>
+            </select>
+          )}
 
           <button className="btn-primary" onClick={handleUpdateUser}>
             Update
@@ -197,11 +235,12 @@ export default function UserManagement() {
 
       {/* TABLE */}
       <div className="table-card">
-        <table>
+         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
+              <th>Department</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -212,6 +251,7 @@ export default function UserManagement() {
               <tr key={user._id}>
                 <td>{user.name}</td>
                 <td>{user.email}</td>
+                <td>{user.department || "-"}</td>
                 <td>
                   <span className={`status ${user.status}`}>
                     {user.status}

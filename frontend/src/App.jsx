@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
 import { useAuth } from "./context/AuthContext";
 import Complaints from "./pages/Complaints";
 import SubmitComplaint from "./pages/SubmitComplaint";
@@ -21,16 +20,9 @@ export default function App() {
 
         <Route path="/users" element={user ? <UserManagement /> : <Navigate to="/" />}/>
 
-        {/* Admin only - for assigning complaints */}
         <Route
           path="/complaints"
           element={user?.role === "admin" ? <Complaints /> : <Navigate to="/" />}
-        />
-
-        {/* Route for employees to register complaints */}
-        <Route
-          path="/register"
-          element={user?.role === "employee" ? <Complaints /> : <Navigate to="/" />}
         />
 
         <Route

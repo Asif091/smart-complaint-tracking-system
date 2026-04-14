@@ -10,7 +10,7 @@ export default function MyComplaints() {
   const [editDescription, setEditDescription] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { getToken } = useAuth();
+  const { getToken, user } = useAuth();
 
   useEffect(() => {
     fetchComplaints();
@@ -19,11 +19,20 @@ export default function MyComplaints() {
   const fetchComplaints = async () => {
     try {
       const token = getToken();
-      const res = await fetch("/api/complaints/my-complaints", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setComplaints(data);
+      
+      if (user?.role === "staff") {
+        const res = await fetch("/api/complaints/staff/grouped", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setComplaints(data);
+      } else {
+        const res = await fetch("/api/complaints/my-complaints", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setComplaints(data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -82,6 +91,45 @@ export default function MyComplaints() {
 
   if (loading) return <div>Loading...</div>;
 
+  // STAFF VIEW - Grouped by department, show status, no status change
+  if (user?.role === "staff") {
+    const departments = Object.keys(complaints);
+    const hasComplaints = departments.some(dept => complaints[dept]?.length > 0);
+
+    if (!hasComplaints) {
+      return (
+        <div>
+          <h1>Assigned Complaints</h1>
+          <p>No complaints assigned to you.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <h1>Assigned Complaints</h1>
+        {departments.map(dept => (
+          complaints[dept]?.length > 0 && (
+            <div key={dept} style={{ marginBottom: "30px" }}>
+              <h3>{dept} Department ({complaints[dept].length})</h3>
+              {complaints[dept].map(c => (
+                <div key={c._id} style={{ border: "1px solid #ddd", padding: "10px", marginBottom: "10px", borderRadius: "4px" }}>
+                  <strong>{c.title}</strong>
+                  <p>{c.description}</p>
+                  <div>Category: {c.category}</div>
+                  <div>Status: {c.status}</div>
+                  <div>Created by: {c.createdBy?.name || "Unknown"}</div>
+                  <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          )
+        ))}
+      </div>
+    );
+  }
+
+  // EMPLOYEE VIEW
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -100,6 +148,7 @@ export default function MyComplaints() {
             <tr>
               <th style={{ textAlign: "left", padding: "8px" }}>Title</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Category</th>
+              <th style={{ textAlign: "left", padding: "8px" }}>Department</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Status</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Date</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Actions</th>
@@ -121,6 +170,7 @@ export default function MyComplaints() {
                   )}
                 </td>
                 <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.category}</td>
+                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.assignedDepartment || "Not assigned"}</td>
                 <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.status}</td>
                 <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
                   {new Date(c.createdAt).toLocaleDateString()}
@@ -134,46 +184,12 @@ export default function MyComplaints() {
                         rows="3"
                         style={{ width: "100%", padding: "4px", marginBottom: "4px" }}
                       />
-                      <button
-                        onClick={() => handleSaveEdit(c._id)}
-                        style={{
-                          backgroundColor: "#4CAF50",
-                          color: "white",
-                          border: "none",
-                          padding: "4px 8px",
-                          marginRight: "4px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        style={{
-                          backgroundColor: "#f44336",
-                          color: "white",
-                          border: "none",
-                          padding: "4px 8px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Cancel
-                      </button>
+                      <button onClick={() => handleSaveEdit(c._id)}>Save</button>
+                      <button onClick={handleCancelEdit}>Cancel</button>
                     </div>
                   ) : (
                     c.status === "pending" && (
-                      <button
-                        onClick={() => handleEdit(c)}
-                        style={{
-                          backgroundColor: "#2196F3",
-                          color: "white",
-                          border: "none",
-                          padding: "4px 8px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Edit
-                      </button>
+                      <button onClick={() => handleEdit(c)}>Edit</button>
                     )
                   )}
                 </td>

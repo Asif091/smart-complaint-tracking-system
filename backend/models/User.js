@@ -23,7 +23,13 @@ const userSchema = new mongoose.Schema(
     enum: ["admin", "employee", "staff", "manager"],
     required: true
   },
-
+  department: {
+      type: String,
+      enum: ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"],
+      required: function() {
+        return this.role === "employee";
+      }
+  },
   status: {
     type: String,
     enum: ["active", "inactive"],
