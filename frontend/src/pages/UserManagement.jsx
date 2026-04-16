@@ -206,26 +206,26 @@ export default function UserManagement() {
               setEditingUser({ ...editingUser, role: e.target.value })
             }
           >
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
             <option value="employee">Employee</option>
             <option value="staff">Staff</option>
           </select>
 
-          {/* Department dropdown in edit form for employees */}
-          {editingUser.role === "employee" && (
-            <select
-              value={editingUser.department || ""}
-              onChange={(e) =>
-                setEditingUser({ ...editingUser, department: e.target.value })
-              }
-            >
-              <option value="">Select Department</option>
-              <option value="HR">HR</option>
-              <option value="IT">IT</option>
-              <option value="Finance">Finance</option>
-              <option value="Marketing & Sales">Marketing & Sales</option>
-              <option value="Software & Product Development">Software & Product Development</option>
-            </select>
-          )}
+          {/* Department dropdown in edit form - visible for all users */}
+          <select
+            value={editingUser.department || ""}
+            onChange={(e) =>
+              setEditingUser({ ...editingUser, department: e.target.value })
+            }
+          >
+            <option value="">Select Department</option>
+            <option value="HR">HR</option>
+            <option value="IT">IT</option>
+            <option value="Finance">Finance</option>
+            <option value="Marketing & Sales">Marketing & Sales</option>
+            <option value="Software & Product Development">Software & Product Development</option>
+          </select>
 
           <button className="btn-primary" onClick={handleUpdateUser}>
             Update

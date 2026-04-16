@@ -129,13 +129,19 @@ exports.deactivateUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, department } = req.body;
     if (role === "admin") {
       return res.status(403).json({ message: "Cannot assign admin role. Contact developer." });
     }
+    
+    const updateData = { name, email, role };
+    if (department) {
+      updateData.department = department;
+    }
+    
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { name, email, role },
+      updateData,
       { new: true }
     );
     
