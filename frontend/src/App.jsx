@@ -27,12 +27,12 @@ export default function App() {
 
         <Route
           path="/submit-complaint"
-          element={user ? <SubmitComplaint /> : <Navigate to="/login" />}
+          element={user && user.role !== "admin" ? <SubmitComplaint /> : <Navigate to="/" />}
         />
 
         <Route
           path="/my-complaints"
-          element={user ? <MyComplaints /> : <Navigate to="/login" />}
+          element={user && user.role !== "admin" ? <MyComplaints /> : <Navigate to="/" />}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
