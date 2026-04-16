@@ -110,7 +110,7 @@ export default function Complaints() {
   const updateStatus = async (complaintId, newStatus) => {
     try {
       const res = await axios.patch(
-        `http://localhost:5000/api/complaints/${complaintId}/status`,
+        `/api/complaints/${complaintId}/status`,
         { status: newStatus },
         {
           headers: {
