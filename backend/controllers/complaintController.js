@@ -207,15 +207,17 @@ exports.getMyAssignedComplaintsGrouped = async (req, res) => {
     res.status(500).json({ message: "Error fetching assigned complaints" });
   }
 };
-// Update complaint status (Staff only)
+
+
 exports.updateStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const {id} = req.params;
+    const {status} = req.body;
 
-    const validStatuses = ["assigned", "in-progress", "resolved"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+    const validStatus = ["pending", "assigned", "in-progress", "resolved", "closed"];
+    
+    if (!validStatus.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
     }
 
     const complaint = await Complaint.findById(id);
@@ -224,17 +226,21 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    // Check if staff is assigned to this complaint
-    if (req.user.role === "staff" && complaint.assignedTo.toString() !== req.user.id) {
+    if (req.user.role === "staff" && complaint.assignedTo?.toString() !== req.user.id) {
       return res.status(403).json({ message: "You can only update complaints assigned to you" });
     }
 
     complaint.status = status;
     await complaint.save();
 
-    res.json({ message: `Status updated to ${status}`, complaint });
+    res.json({ 
+      success: true,
+      message: `Status updated to ${status}`,
+      complaint 
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error("Update status error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

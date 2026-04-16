@@ -106,6 +106,30 @@ export default function Complaints() {
     }
   };
 
+
+  const updateStatus = async (complaintId, newStatus) => {
+    try {
+      const res = await axios.patch(
+        `http://localhost:5000/api/complaints/${complaintId}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert(res.data.message);
+      fetchComplaints(); // Refresh the list
+      if (user?.role === "employee") {
+        fetchMyComplaints(); // Refresh employee view
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+
   const handleCreate = async () => {
     try {
       const res = await axios.post(
@@ -267,6 +291,22 @@ export default function Complaints() {
                     <p>{c.description}</p>
                     <div>Category: {c.category}</div>
                     <div>Status: {c.status}</div>
+
+                    <div style={{ marginTop: "10px" }}>
+                      <label style={{ marginRight: "10px" }}>Update Status: </label>
+                      <select
+                        value={c.status}
+                        onChange={(e) => updateStatus(c._id, e.target.value)}
+                        style={{ padding: "5px", borderRadius: "4px", cursor: "pointer" }}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="assigned">Assigned</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+
                     <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                     <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
                     
@@ -303,6 +343,44 @@ export default function Complaints() {
           })()}
         </div>
       )}
+
+      {user?.role === "staff" && (
+        <div style={{ marginTop: "20px" }}>
+          <h3>My Assigned Complaints</h3>
+          {complaints.filter(c => c.assignedTo?._id === user?.id).length === 0 ? (
+            <p>No complaints assigned to you.</p>
+          ) : (
+            complaints.filter(c => c.assignedTo?._id === user?.id).map((c) => (
+              <div key={c._id} style={{ marginBottom: "15px", border: "1px solid #ccc", padding: "10px", borderRadius: "5px" }}>
+                <strong>{c.title}</strong>
+                <p>{c.description}</p>
+                <div>Category: {c.category}</div>
+                <div>Current Status: <strong style={{ color: "#2196f3" }}>{c.status}</strong></div>
+                <div>Created by: {c.createdBy?.name || "Unknown"}</div>
+                <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+                
+                {/* Status Update Dropdown - Staff can update their assigned complaints */}
+                <div style={{ marginTop: "10px" }}>
+                  <label style={{ marginRight: "10px" }}>Update Status: </label>
+                  <select
+                    value={c.status}
+                    onChange={(e) => updateStatus(c._id, e.target.value)}
+                    style={{ padding: "5px", borderRadius: "4px", cursor: "pointer" }}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+
       {/* Success Message */}
       {success && location.pathname === "/register" && (
         <div style={{ marginTop: "20px", border: "1px solid green", padding: "10px" }}>

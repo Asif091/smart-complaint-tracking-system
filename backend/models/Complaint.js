@@ -33,11 +33,13 @@ const complaintSchema = new mongoose.Schema(
       enum: ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"],
       default: null
     },
+
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null
     },
+    
     assignedAt: {
       type: Date,
       default: null
