@@ -37,7 +37,7 @@ export default function Complaints() {
 
   const fetchComplaints = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/complaints", {
+      const res = await axios.get("/api/complaints", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -51,7 +51,7 @@ export default function Complaints() {
 
   const fetchStaffList = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
+      const res = await axios.get("/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -66,7 +66,7 @@ export default function Complaints() {
 
   const fetchMyComplaints = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/complaints/my-complaints", {
+      const res = await axios.get("/api/complaints/my-complaints", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,7 +89,7 @@ export default function Complaints() {
       }
 
       const res = await axios.put(
-        `http://localhost:5000/api/complaints/${complaintId}/assign-staff`,
+        `/api/complaints/${complaintId}/assign-staff`,
         { staffId },
         {
           headers: {
@@ -133,7 +133,7 @@ export default function Complaints() {
   const handleCreate = async () => {
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/complaints",
+        "/api/complaints",
         form,
         {
           headers: {
@@ -166,7 +166,7 @@ export default function Complaints() {
   const handleSaveEdit = async (id) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/complaints/${id}`,
+        `/api/complaints/${id}`,
         editForm,
         {
           headers: {
@@ -359,7 +359,6 @@ export default function Complaints() {
                 <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                 <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
                 
-                {/* Status Update Dropdown - Staff can update their assigned complaints */}
                 <div style={{ marginTop: "10px" }}>
                   <label style={{ marginRight: "10px" }}>Update Status: </label>
                   <select
