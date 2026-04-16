@@ -119,9 +119,9 @@ export default function Complaints() {
         }
       );
       alert(res.data.message);
-      fetchComplaints(); // Refresh the list
+      fetchComplaints(); 
       if (user?.role === "employee") {
-        fetchMyComplaints(); // Refresh employee view
+        fetchMyComplaints();
       }
     } catch (err) {
       console.error(err);
@@ -343,6 +343,7 @@ export default function Complaints() {
           })()}
         </div>
       )}
+
 
       {user?.role === "staff" && (
         <div style={{ marginTop: "20px" }}>

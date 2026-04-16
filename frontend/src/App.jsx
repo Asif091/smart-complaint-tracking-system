@@ -22,7 +22,7 @@ export default function App() {
 
         <Route
           path="/complaints"
-          element={user?.role === "admin" ? <Complaints /> : <Navigate to="/" />}
+          element={user?.role === "admin" || user?.role === "staff" ? <Complaints /> : <Navigate to="/" />}
         />
 
         <Route
