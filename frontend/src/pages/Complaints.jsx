@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import ComplaintTimeline from "../components/ComplaintTimeline";
 
 export default function Complaints() {
   const { user } = useAuth();
@@ -12,6 +13,13 @@ export default function Complaints() {
   const [staffList, setStaffList] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // NEW: States for comments and history
+  const [commentText, setCommentText] = useState({});
+  const [expandedHistory, setExpandedHistory] = useState({});
+  const [complaintHistory, setComplaintHistory] = useState({});
+  const [loadingHistory, setLoadingHistory] = useState({});
+  const [submittingComment, setSubmittingComment] = useState({});
 
   const [form, setForm] = useState({
     title: "",
@@ -78,6 +86,29 @@ export default function Complaints() {
     }
   };
 
+  // NEW: Fetch complaint history
+  const fetchComplaintHistory = async (complaintId) => {
+    setLoadingHistory(prev => ({ ...prev, [complaintId]: true }));
+    try {
+      const res = await axios.get(`/api/complaints/${complaintId}/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setComplaintHistory(prev => ({ ...prev, [complaintId]: res.data.history }));
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    } finally {
+      setLoadingHistory(prev => ({ ...prev, [complaintId]: false }));
+    }
+  };
+
+  // NEW: Toggle history expansion
+  const toggleHistory = (complaintId) => {
+    if (!expandedHistory[complaintId]) {
+      fetchComplaintHistory(complaintId);
+    }
+    setExpandedHistory(prev => ({ ...prev, [complaintId]: !prev[complaintId] }));
+  };
+
   const assignToStaff = async (complaintId) => {
     try {
       const staffSelect = document.getElementById(`staff-${complaintId}`);
@@ -100,28 +131,47 @@ export default function Complaints() {
 
       alert(res.data.message);
       fetchComplaints();
+      
+      // Refresh history if expanded
+      if (expandedHistory[complaintId]) {
+        fetchComplaintHistory(complaintId);
+      }
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Failed to assign to staff");
     }
   };
 
-
-  const updateStatus = async (complaintId, newStatus) => {
+  // MODIFIED: Update status with optional comment
+  const updateStatus = async (complaintId, newStatus, comment = null) => {
     try {
+      const payload = { status: newStatus };
+      if (comment) {
+        payload.comment = comment;
+      }
+
       const res = await axios.patch(
         `/api/complaints/${complaintId}/status`,
-        { status: newStatus },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+      
       alert(res.data.message);
-      fetchComplaints(); 
+      fetchComplaints();
       if (user?.role === "employee") {
         fetchMyComplaints();
+      }
+      
+      // Clear comment input
+      setCommentText(prev => ({ ...prev, [complaintId]: "" }));
+      
+      // Refresh history if expanded
+      if (expandedHistory[complaintId]) {
+        fetchComplaintHistory(complaintId);
       }
     } catch (err) {
       console.error(err);
@@ -129,6 +179,39 @@ export default function Complaints() {
     }
   };
 
+  // NEW: Add comment only (no status change)
+  const addComment = async (complaintId) => {
+    const comment = commentText[complaintId];
+    if (!comment || comment.trim() === "") {
+      alert("Please enter a comment");
+      return;
+    }
+
+    setSubmittingComment(prev => ({ ...prev, [complaintId]: true }));
+    try {
+      const res = await axios.post(
+        `/api/complaints/${complaintId}/comments`,
+        { comment },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setCommentText(prev => ({ ...prev, [complaintId]: "" }));
+      
+      // Refresh history
+      if (expandedHistory[complaintId]) {
+        fetchComplaintHistory(complaintId);
+      }
+      
+      alert("Comment added successfully");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to add comment");
+    } finally {
+      setSubmittingComment(prev => ({ ...prev, [complaintId]: false }));
+    }
+  };
 
   const handleCreate = async () => {
     try {
@@ -244,6 +327,29 @@ export default function Complaints() {
                         Edit
                       </button>
                     )}
+                    
+                    {/* NEW: History Toggle Button */}
+                    <button
+                      className="history-toggle-btn"
+                      onClick={() => toggleHistory(c._id)}
+                      style={{ marginLeft: "10px" }}
+                    >
+                      {expandedHistory[c._id] ? "Hide" : "View"} History
+                    </button>
+
+                    {/* NEW: History Timeline */}
+                    {expandedHistory[c._id] && (
+                      <div style={{ marginTop: "15px" }}>
+                        {loadingHistory[c._id] ? (
+                          <p>Loading history...</p>
+                        ) : (
+                          <ComplaintTimeline 
+                            logs={complaintHistory[c._id] || []} 
+                            compact={true}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -282,9 +388,9 @@ export default function Complaints() {
 
             return departmentsToShow.map(dept => (
               <div key={dept} style={{ marginBottom: "30px" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "10px", padding: "8px 0", borderBottom: "2px solid currentColor", color: "inherit" }}>
-                📁 {dept} Department ({grouped[dept].length})
-              </h3>
+                <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "10px", padding: "8px 0", borderBottom: "2px solid currentColor", color: "inherit" }}>
+                  📁 {dept} Department ({grouped[dept].length})
+                </h3>
                 {grouped[dept].map(c => (
                   <div key={c._id} style={{ marginBottom: "15px", border: "1px solid #ccc", padding: "10px", borderRadius: "5px", marginLeft: "15px" }}>
                     <strong>{c.title}</strong>
@@ -296,15 +402,44 @@ export default function Complaints() {
                       <label style={{ marginRight: "10px" }}>Update Status: </label>
                       <select
                         value={c.status}
-                        onChange={(e) => updateStatus(c._id, e.target.value)}
+                        onChange={(e) => {
+                          const newStatus = e.target.value;
+                          const comment = commentText[c._id];
+                          updateStatus(c._id, newStatus, comment);
+                        }}
                         style={{ padding: "5px", borderRadius: "4px", cursor: "pointer" }}
                       >
                         <option value="pending">Pending</option>
                         <option value="assigned">Assigned</option>
                         <option value="in-progress">In Progress</option>
                         <option value="resolved">Resolved</option>
-                        <option value="closed">Closed</option>
                       </select>
+                    </div>
+
+                    {/* NEW: Comment Input */}
+                    <div className="comment-section">
+                      <label style={{ display: "block", marginBottom: "5px", fontSize: "0.9rem", color: "#666" }}>
+                        Add resolution note (optional):
+                      </label>
+                      <div className="comment-input-wrapper">
+                        <textarea
+                          className="comment-input"
+                          placeholder="Enter resolution notes or comments..."
+                          value={commentText[c._id] || ""}
+                          onChange={(e) => setCommentText(prev => ({ 
+                            ...prev, 
+                            [c._id]: e.target.value 
+                          }))}
+                          rows="2"
+                        />
+                        <button
+                          className="comment-submit-btn"
+                          onClick={() => addComment(c._id)}
+                          disabled={submittingComment[c._id]}
+                        >
+                          {submittingComment[c._id] ? "Adding..." : "Add Comment"}
+                        </button>
+                      </div>
                     </div>
 
                     <div>Created by: {c.createdBy?.name || "Unknown"}</div>
@@ -336,6 +471,30 @@ export default function Complaints() {
                         </button>
                       </div>
                     )}
+
+                    {/* NEW: History Toggle */}
+                    <div style={{ marginTop: "15px" }}>
+                      <button
+                        className="history-toggle-btn"
+                        onClick={() => toggleHistory(c._id)}
+                      >
+                        {expandedHistory[c._id] ? "📋 Hide History" : "📋 View History"}
+                      </button>
+                    </div>
+
+                    {/* NEW: History Timeline */}
+                    {expandedHistory[c._id] && (
+                      <div style={{ marginTop: "15px" }}>
+                        {loadingHistory[c._id] ? (
+                          <p>Loading history...</p>
+                        ) : (
+                          <ComplaintTimeline 
+                            logs={complaintHistory[c._id] || []} 
+                            compact={false}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -344,7 +503,7 @@ export default function Complaints() {
         </div>
       )}
 
-
+      {/* STAFF VIEW */}
       {user?.role === "staff" && (
         <div style={{ marginTop: "20px" }}>
           <h3>My Assigned Complaints</h3>
@@ -364,22 +523,73 @@ export default function Complaints() {
                   <label style={{ marginRight: "10px" }}>Update Status: </label>
                   <select
                     value={c.status}
-                    onChange={(e) => updateStatus(c._id, e.target.value)}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      const comment = commentText[c._id];
+                      updateStatus(c._id, newStatus, comment);
+                    }}
                     style={{ padding: "5px", borderRadius: "4px", cursor: "pointer" }}
                   >
-                    <option value="pending">Pending</option>
                     <option value="assigned">Assigned</option>
                     <option value="in-progress">In Progress</option>
                     <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
                   </select>
                 </div>
+
+                {/* NEW: Comment Input for Staff */}
+                <div className="comment-section">
+                  <label style={{ display: "block", marginBottom: "5px", fontSize: "0.9rem", color: "#666" }}>
+                    Add resolution note:
+                  </label>
+                  <div className="comment-input-wrapper">
+                    <textarea
+                      className="comment-input"
+                      placeholder="Enter resolution notes or comments..."
+                      value={commentText[c._id] || ""}
+                      onChange={(e) => setCommentText(prev => ({ 
+                        ...prev, 
+                        [c._id]: e.target.value 
+                      }))}
+                      rows="2"
+                    />
+                    <button
+                      className="comment-submit-btn"
+                      onClick={() => addComment(c._id)}
+                      disabled={submittingComment[c._id]}
+                    >
+                      {submittingComment[c._id] ? "Adding..." : "Add Comment"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* NEW: History Toggle */}
+                <div style={{ marginTop: "15px" }}>
+                  <button
+                    className="history-toggle-btn"
+                    onClick={() => toggleHistory(c._id)}
+                  >
+                    {expandedHistory[c._id] ? "📋 Hide History" : "📋 View History"}
+                  </button>
+                </div>
+
+                {/* NEW: History Timeline */}
+                {expandedHistory[c._id] && (
+                  <div style={{ marginTop: "15px" }}>
+                    {loadingHistory[c._id] ? (
+                      <p>Loading history...</p>
+                    ) : (
+                      <ComplaintTimeline 
+                        logs={complaintHistory[c._id] || []} 
+                        compact={false}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
       )}
-
 
       {/* Success Message */}
       {success && location.pathname === "/register" && (

@@ -17,6 +17,12 @@ const complaintSchema = new mongoose.Schema(
       required: true
     },
 
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high", "critical"],
+      default: "medium"
+    },
+
     status: {
       type: String,
       enum: ["pending", "assigned", "in-progress", "resolved"],
@@ -25,7 +31,8 @@ const complaintSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
+      required: true
     },
 
     assignedDepartment: {
@@ -43,12 +50,45 @@ const complaintSchema = new mongoose.Schema(
     assignedAt: {
       type: Date,
       default: null
-    }
+    },
 
+    // Track resolution time
+    resolvedAt: {
+      type: Date,
+      default: null
+    },
+
+    // Store last comment for quick display
+    lastComment: {
+      text: String,
+      by: String,
+      at: Date
+    }
   },
   {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
+
+// Virtual for action history
+complaintSchema.virtual("actionHistory", {
+  ref: "ActionLog",
+  localField: "_id",
+  foreignField: "complaint",
+  options: { sort: { createdAt: -1 } } // Most recent first
+});
+
+// Virtual for resolution time (in days)
+complaintSchema.virtual("resolutionTime").get(function() {
+  if (this.resolvedAt && this.createdAt) {
+    const diffTime = Math.abs(this.resolvedAt - this.createdAt);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }
+  return null;
+});
+
 
 module.exports = mongoose.model("Complaint", complaintSchema);

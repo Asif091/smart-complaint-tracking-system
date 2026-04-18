@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import ComplaintTimeline from "../components/ComplaintTimeline";
 
 export default function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
@@ -10,6 +11,12 @@ export default function MyComplaints() {
   const [editDescription, setEditDescription] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // NEW: States for history
+  const [expandedHistory, setExpandedHistory] = useState({});
+  const [complaintHistory, setComplaintHistory] = useState({});
+  const [loadingHistory, setLoadingHistory] = useState({});
+  
   const { getToken, user } = useAuth();
 
   useEffect(() => {
@@ -38,6 +45,31 @@ export default function MyComplaints() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // NEW: Fetch complaint history
+  const fetchComplaintHistory = async (complaintId) => {
+    setLoadingHistory(prev => ({ ...prev, [complaintId]: true }));
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/complaints/${complaintId}/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setComplaintHistory(prev => ({ ...prev, [complaintId]: data.history }));
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    } finally {
+      setLoadingHistory(prev => ({ ...prev, [complaintId]: false }));
+    }
+  };
+
+  // NEW: Toggle history expansion
+  const toggleHistory = (complaintId) => {
+    if (!expandedHistory[complaintId]) {
+      fetchComplaintHistory(complaintId);
+    }
+    setExpandedHistory(prev => ({ ...prev, [complaintId]: !prev[complaintId] }));
   };
 
   const handleEdit = (complaint) => {
@@ -91,7 +123,7 @@ export default function MyComplaints() {
 
   if (loading) return <div>Loading...</div>;
 
-  // STAFF VIEW - Grouped by department, show status, no status change
+  // STAFF VIEW - Grouped by department
   if (user?.role === "staff") {
     const departments = Object.keys(complaints);
     const hasComplaints = departments.some(dept => complaints[dept]?.length > 0);
@@ -120,6 +152,30 @@ export default function MyComplaints() {
                   <div>Status: {c.status}</div>
                   <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                   <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+                  
+                  {/* NEW: History Toggle for Staff */}
+                  <div style={{ marginTop: "10px" }}>
+                    <button
+                      className="history-toggle-btn"
+                      onClick={() => toggleHistory(c._id)}
+                    >
+                      {expandedHistory[c._id] ? "📋 Hide History" : "📋 View History"}
+                    </button>
+                  </div>
+
+                  {/* NEW: History Timeline */}
+                  {expandedHistory[c._id] && (
+                    <div style={{ marginTop: "15px" }}>
+                      {loadingHistory[c._id] ? (
+                        <p>Loading history...</p>
+                      ) : (
+                        <ComplaintTimeline 
+                          logs={complaintHistory[c._id] || []} 
+                          compact={true}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -156,44 +212,70 @@ export default function MyComplaints() {
           </thead>
           <tbody>
             {complaints.map(c => (
-              <tr key={c._id}>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
-                  {editingId === c._id ? (
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      style={{ width: "100%", padding: "4px" }}
-                    />
-                  ) : (
-                    c.title
-                  )}
-                </td>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.category}</td>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.assignedDepartment || "Not assigned"}</td>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.status}</td>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </td>
-                <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
-                  {editingId === c._id ? (
-                    <div>
-                      <textarea
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                        rows="3"
-                        style={{ width: "100%", padding: "4px", marginBottom: "4px" }}
+              <>
+                <tr key={c._id}>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
+                    {editingId === c._id ? (
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        style={{ width: "100%", padding: "4px" }}
                       />
-                      <button onClick={() => handleSaveEdit(c._id)}>Save</button>
-                      <button onClick={handleCancelEdit}>Cancel</button>
-                    </div>
-                  ) : (
-                    c.status === "pending" && (
-                      <button onClick={() => handleEdit(c)}>Edit</button>
-                    )
-                  )}
-                </td>
-              </tr>
+                    ) : (
+                      c.title
+                    )}
+                  </td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.category}</td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.assignedDepartment || "Not assigned"}</td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.status}</td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
+                    {editingId === c._id ? (
+                      <div>
+                        <textarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          rows="3"
+                          style={{ width: "100%", padding: "4px", marginBottom: "4px" }}
+                        />
+                        <button onClick={() => handleSaveEdit(c._id)}>Save</button>
+                        <button onClick={handleCancelEdit} style={{ marginLeft: "5px" }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                        {c.status === "pending" && (
+                          <button onClick={() => handleEdit(c)}>Edit</button>
+                        )}
+                        <button
+                          className="history-toggle-btn"
+                          onClick={() => toggleHistory(c._id)}
+                        >
+                          {expandedHistory[c._id] ? "Hide History" : "View History"}
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                
+                {/* NEW: History Timeline Row */}
+                {expandedHistory[c._id] && (
+                  <tr>
+                    <td colSpan="6" style={{ padding: "10px", borderTop: "1px solid #ddd", background: "var(--surface)" }}>
+                      {loadingHistory[c._id] ? (
+                        <p style={{ textAlign: "center", padding: "20px" }}>Loading history...</p>
+                      ) : (
+                        <ComplaintTimeline 
+                          logs={complaintHistory[c._id] || []} 
+                          compact={false}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
