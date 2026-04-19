@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { auth, authorize } = require("../middleware/auth");
+const upload = require("../config/upload");
 
 const { 
   submitComplaint,
@@ -19,7 +20,7 @@ const {
 // ============================================
 // CREATE COMPLAINT
 // ============================================
-router.post("/", auth, submitComplaint);
+router.post("/", auth, upload.array("attachments", 5), submitComplaint);
 
 // ============================================
 // GET COMPLAINTS

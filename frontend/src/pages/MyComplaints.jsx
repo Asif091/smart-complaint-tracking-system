@@ -3,6 +3,50 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ComplaintTimeline from "../components/ComplaintTimeline";
 
+function AttachmentList({ attachments }) {
+  if (!attachments || attachments.length === 0) return null;
+
+  const isImage = (mimetype) => mimetype?.startsWith("image/");
+
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <strong>Attachments ({attachments.length}):</strong>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "5px" }}>
+        {attachments.map((file, index) => (
+          <div key={index} style={{ 
+            border: "1px solid #ddd", 
+            padding: "5px", 
+            borderRadius: "4px",
+            maxWidth: "150px"
+          }}>
+            {isImage(file.mimetype) ? (
+              <a href={`/uploads/${file.filename}`} target="_blank" rel="noopener noreferrer">
+                <img 
+                  src={`/uploads/${file.filename}`} 
+                  alt={file.originalName}
+                  style={{ width: "100px", height: "100px", objectFit: "cover", cursor: "pointer" }}
+                />
+              </a>
+            ) : (
+              <a 
+                href={`/uploads/${file.filename}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ display: "block", fontSize: "12px", textDecoration: "none", color: "#0066cc" }}
+              >
+                📄 {file.originalName}
+              </a>
+            )}
+            <div style={{ fontSize: "10px", color: "#666", marginTop: "2px" }}>
+              {(file.size / 1024).toFixed(1)} KB
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +192,7 @@ export default function MyComplaints() {
                 <div key={c._id} style={{ border: "1px solid #ddd", padding: "10px", marginBottom: "10px", borderRadius: "4px" }}>
                   <strong>{c.title}</strong>
                   <p>{c.description}</p>
+                  <AttachmentList attachments={c.attachments} />
                   <div>Category: {c.category}</div>
                   <div>Status: {c.status}</div>
                   <div>Created by: {c.createdBy?.name || "Unknown"}</div>
@@ -207,6 +252,7 @@ export default function MyComplaints() {
               <th style={{ textAlign: "left", padding: "8px" }}>Department</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Status</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Date</th>
+              <th style={{ textAlign: "left", padding: "8px" }}>Attachments</th>
               <th style={{ textAlign: "left", padding: "8px" }}>Actions</th>
             </tr>
           </thead>
@@ -231,6 +277,13 @@ export default function MyComplaints() {
                   <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>{c.status}</td>
                   <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
                     {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
+                    {c.attachments?.length > 0 ? (
+                      <span style={{ color: "#0066cc" }}>{c.attachments.length} file(s)</span>
+                    ) : (
+                      <span style={{ color: "#999" }}>-</span>
+                    )}
                   </td>
                   <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
                     {editingId === c._id ? (
@@ -263,7 +316,8 @@ export default function MyComplaints() {
                 {/* NEW: History Timeline Row */}
                 {expandedHistory[c._id] && (
                   <tr>
-                    <td colSpan="6" style={{ padding: "10px", borderTop: "1px solid #ddd", background: "var(--surface)" }}>
+                    <td colSpan="7" style={{ padding: "10px", borderTop: "1px solid #ddd", background: "var(--surface)" }}>
+                      <AttachmentList attachments={c.attachments} />
                       {loadingHistory[c._id] ? (
                         <p style={{ textAlign: "center", padding: "20px" }}>Loading history...</p>
                       ) : (

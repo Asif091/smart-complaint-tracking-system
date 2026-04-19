@@ -5,6 +5,50 @@ import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import ComplaintTimeline from "../components/ComplaintTimeline";
 
+function AttachmentList({ attachments }) {
+  if (!attachments || attachments.length === 0) return null;
+
+  const isImage = (mimetype) => mimetype?.startsWith("image/");
+
+  return (
+    <div style={{ marginTop: "10px" }}>
+      <strong>Attachments ({attachments.length}):</strong>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "5px" }}>
+        {attachments.map((file, index) => (
+          <div key={index} style={{ 
+            border: "1px solid #ddd", 
+            padding: "5px", 
+            borderRadius: "4px",
+            maxWidth: "150px"
+          }}>
+            {isImage(file.mimetype) ? (
+              <a href={`/uploads/${file.filename}`} target="_blank" rel="noopener noreferrer">
+                <img 
+                  src={`/uploads/${file.filename}`} 
+                  alt={file.originalName}
+                  style={{ width: "100px", height: "100px", objectFit: "cover", cursor: "pointer" }}
+                />
+              </a>
+            ) : (
+              <a 
+                href={`/uploads/${file.filename}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ display: "block", fontSize: "12px", textDecoration: "none", color: "#0066cc" }}
+              >
+                📄 {file.originalName}
+              </a>
+            )}
+            <div style={{ fontSize: "10px", color: "#666", marginTop: "2px" }}>
+              {(file.size / 1024).toFixed(1)} KB
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Complaints() {
   const { user } = useAuth();
   const [success, setSuccess] = useState(null);
@@ -416,34 +460,10 @@ export default function Complaints() {
                       </select>
                     </div>
 
-                    {/* NEW: Comment Input */}
-                    <div className="comment-section">
-                      <label style={{ display: "block", marginBottom: "5px", fontSize: "0.9rem", color: "#666" }}>
-                        Add resolution note (optional):
-                      </label>
-                      <div className="comment-input-wrapper">
-                        <textarea
-                          className="comment-input"
-                          placeholder="Enter resolution notes or comments..."
-                          value={commentText[c._id] || ""}
-                          onChange={(e) => setCommentText(prev => ({ 
-                            ...prev, 
-                            [c._id]: e.target.value 
-                          }))}
-                          rows="2"
-                        />
-                        <button
-                          className="comment-submit-btn"
-                          onClick={() => addComment(c._id)}
-                          disabled={submittingComment[c._id]}
-                        >
-                          {submittingComment[c._id] ? "Adding..." : "Add Comment"}
-                        </button>
-                      </div>
-                    </div>
-
                     <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                     <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+                    
+                    <AttachmentList attachments={c.attachments} />
                     
                     {c.assignedTo && (
                       <div style={{ marginTop: "8px", color: "green" }}>
@@ -519,6 +539,8 @@ export default function Complaints() {
                 <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                 <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
                 
+                <AttachmentList attachments={c.attachments} />
+                
                 <div style={{ marginTop: "10px" }}>
                   <label style={{ marginRight: "10px" }}>Update Status: </label>
                   <select
@@ -534,32 +556,6 @@ export default function Complaints() {
                     <option value="in-progress">In Progress</option>
                     <option value="resolved">Resolved</option>
                   </select>
-                </div>
-
-                {/* NEW: Comment Input for Staff */}
-                <div className="comment-section">
-                  <label style={{ display: "block", marginBottom: "5px", fontSize: "0.9rem", color: "#666" }}>
-                    Add resolution note:
-                  </label>
-                  <div className="comment-input-wrapper">
-                    <textarea
-                      className="comment-input"
-                      placeholder="Enter resolution notes or comments..."
-                      value={commentText[c._id] || ""}
-                      onChange={(e) => setCommentText(prev => ({ 
-                        ...prev, 
-                        [c._id]: e.target.value 
-                      }))}
-                      rows="2"
-                    />
-                    <button
-                      className="comment-submit-btn"
-                      onClick={() => addComment(c._id)}
-                      disabled={submittingComment[c._id]}
-                    >
-                      {submittingComment[c._id] ? "Adding..." : "Add Comment"}
-                    </button>
-                  </div>
                 </div>
 
                 {/* NEW: History Toggle */}

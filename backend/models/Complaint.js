@@ -63,7 +63,20 @@ const complaintSchema = new mongoose.Schema(
       text: String,
       by: String,
       at: Date
-    }
+    },
+
+    // Attachments
+    attachments: [{
+      filename: String,
+      originalName: String,
+      mimetype: String,
+      size: Number,
+      path: String,
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }]
   },
   {
     timestamps: true,

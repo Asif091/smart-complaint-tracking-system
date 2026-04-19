@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 
 // Load environment variables BEFORE importing anything that reads process.env
 dotenv.config();
@@ -15,6 +16,9 @@ connectDB();
 // middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // routes
 app.get("/", (req, res) => {

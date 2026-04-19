@@ -22,12 +22,15 @@ async function deleteUsers() {
     console.log('Connected to MongoDB');
 
     const emailsToDelete = [
-      'test@test.com',
+      'manager@example.com',
+      'rafid@yahoo.com',
+      'sham@yahoo.com',
+      'sim@yahoo.com',
+      'tamin@yahoo.com',
       'nabil@yahoo.com',
-      'abc@yahoo.com',
-      'rafid@example.com',
-      'habib@example.com',
-      'tt@gmail.com'
+      'admin@test.com',
+      'testuser@test.com',
+      'fahim@yahoo.com'
     ];
 
     const result = await User.deleteMany({ email: { $in: emailsToDelete } });

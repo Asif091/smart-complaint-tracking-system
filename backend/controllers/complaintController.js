@@ -43,6 +43,20 @@ exports.submitComplaint = async (req, res) => {
       assignedDepartment = user.department;
     }
 
+    // Handle file uploads
+    const attachments = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        attachments.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          path: file.path
+        });
+      });
+    }
+
     const complaint = await Complaint.create({
       title,
       description,
@@ -50,13 +64,14 @@ exports.submitComplaint = async (req, res) => {
       priority: priority || "medium",
       createdBy: req.user.id,
       status: "pending",
-      assignedDepartment: assignedDepartment
+      assignedDepartment: assignedDepartment,
+      attachments
     });
 
     // Log complaint creation
     await logAction(complaint._id, req.user.id, "created", {
       comment: `Complaint submitted by ${user.name}`,
-      metadata: { category, priority: priority || "medium" }
+      metadata: { category, priority: priority || "medium", attachmentsCount: attachments.length }
     });
 
     res.status(201).json(complaint);
