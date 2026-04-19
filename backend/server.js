@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const fs = require("fs");
 
 // Load environment variables BEFORE importing anything that reads process.env
 dotenv.config();
@@ -17,7 +18,39 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files
+// Serve uploaded files with original filename (download mode)
+app.get("/api/uploads/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, "uploads", filename);
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: "File not found" });
+  }
+
+  const Complaint = require("./models/Complaint");
+  
+  Complaint.findOne({ "attachments.filename": filename })
+    .then(complaint => {
+      let originalName = filename;
+      if (complaint) {
+        const attachment = complaint.attachments.find(a => a.filename === filename);
+        if (attachment) {
+          originalName = attachment.originalName;
+        }
+      }
+      
+      res.setHeader("Content-Disposition", `attachment; filename="${originalName}"`);
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.sendFile(filePath);
+    })
+    .catch(() => {
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.sendFile(filePath);
+    });
+});
+
+// Serve uploaded files (for images preview)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // routes

@@ -31,8 +31,8 @@ function AttachmentList({ attachments }) {
               </a>
             ) : (
               <a 
-                href={`/uploads/${file.filename}`} 
-                target="_blank" 
+                href={`/api/uploads/${file.filename}`} 
+                download={file.originalName}
                 rel="noopener noreferrer"
                 style={{ display: "block", fontSize: "12px", textDecoration: "none", color: "#0066cc" }}
               >
