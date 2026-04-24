@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import ComplaintTimeline from "../components/ComplaintTimeline";
+import ComplaintSearch from "../components/ComplaintSearch";
+
 
 function AttachmentList({ attachments }) {
   if (!attachments || attachments.length === 0) return null;
@@ -64,6 +66,10 @@ export default function Complaints() {
   const [complaintHistory, setComplaintHistory] = useState({});
   const [loadingHistory, setLoadingHistory] = useState({});
   const [submittingComment, setSubmittingComment] = useState({});
+
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResultCount, setSearchResultCount] = useState(null);
+
 
   const [form, setForm] = useState({
     title: "",
@@ -257,6 +263,40 @@ export default function Complaints() {
     }
   };
 
+
+  const handleSearch = async (filters) => {
+    setSearchLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.keyword) params.append('keyword', filters.keyword);
+      if (filters.category !== 'all') params.append('category', filters.category);
+      if (filters.status !== 'all') params.append('status', filters.status);
+      if (filters.priority !== 'all') params.append('priority', filters.priority);
+      if (filters.department !== 'all') params.append('department', filters.department);
+
+      const queryString = params.toString();
+      const url = `/api/complaints/search${queryString ? `?${queryString}` : ''}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setComplaints(res.data.complaints);
+      setSearchResultCount(res.data.count);
+    } catch (err) {
+      console.error(err);
+      alert('Search failed');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const resetAndFetchAll = () => {
+    fetchComplaints();
+    setSearchResultCount(null);
+  };
+
+
   const handleCreate = async () => {
     try {
       const res = await axios.post(
@@ -405,6 +445,26 @@ export default function Complaints() {
       {/* ADMIN VIEW - Grouped by Department */}
       {user?.role === "admin" && (
         <div style={{ marginTop: "20px" }}>
+          
+          <div style={{ marginBottom: "20px" }}>
+            <ComplaintSearch onSearch={handleSearch} loading={searchLoading} />
+            {searchResultCount !== null && (
+              <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                Found {searchResultCount} complaint(s)
+                <button onClick={resetAndFetchAll} style={{ 
+                  marginLeft: "10px", 
+                  background: "none", 
+                  border: "none", 
+                  color: "#2196f3", 
+                  cursor: "pointer",
+                  textDecoration: "underline"
+                }}>
+                  Show all
+                </button>
+              </div>
+            )}
+          </div>
+          
           {(() => {
             const grouped = {
               "HR": [],
@@ -492,17 +552,18 @@ export default function Complaints() {
                       </div>
                     )}
 
-                    {/* NEW: History Toggle */}
+                    {/* History Toggle */}
                     <div style={{ marginTop: "15px" }}>
                       <button
                         className="history-toggle-btn"
                         onClick={() => toggleHistory(c._id)}
+                        style={{ padding: "5px 10px", cursor: "pointer", backgroundColor: "#f0f0f0", border: "1px solid #ccc", borderRadius: "4px" }}
                       >
                         {expandedHistory[c._id] ? "📋 Hide History" : "📋 View History"}
                       </button>
                     </div>
 
-                    {/* NEW: History Timeline */}
+                    {/* History Timeline */}
                     {expandedHistory[c._id] && (
                       <div style={{ marginTop: "15px" }}>
                         {loadingHistory[c._id] ? (
@@ -522,6 +583,7 @@ export default function Complaints() {
           })()}
         </div>
       )}
+
 
       {/* STAFF VIEW */}
       {user?.role === "staff" && (

@@ -12,10 +12,12 @@ const {
   getComplaintsGroupedByDepartment, 
   getMyAssignedComplaintsGrouped, 
   updateStatus,
-  getComplaintHistory,    // NEW
-  addComment,             // NEW
-  getComplaintStats       // NEW
+  getComplaintHistory,    
+  addComment,             
+  getComplaintStats,       
+  searchComplaints  
 } = require("../controllers/complaintController");
+
 
 // ============================================
 // CREATE COMPLAINT
@@ -27,6 +29,8 @@ router.post("/", auth, upload.array("attachments", 5), submitComplaint);
 // ============================================
 // Get all complaints (Admin/Staff)
 router.get("/", auth, getComplaints);
+
+router.get("/search", auth, searchComplaints);
 
 // Get personal complaints (Employee)
 router.get("/my-complaints", auth, getMyComplaints);

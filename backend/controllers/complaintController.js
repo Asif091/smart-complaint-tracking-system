@@ -25,9 +25,7 @@ const logAction = async (complaintId, userId, action, details = {}) => {
   }
 };
 
-// ============================================
-// SUBMIT COMPLAINT
-// ============================================
+
 exports.submitComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
@@ -297,9 +295,7 @@ exports.getMyAssignedComplaintsGrouped = async (req, res) => {
   }
 };
 
-// ============================================
-// UPDATE STATUS (with comment support)
-// ============================================
+
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -550,5 +546,58 @@ exports.getComplaintStats = async (req, res) => {
   } catch (err) {
     console.error("Error fetching complaint stats:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+exports.searchComplaints = async (req, res) => {
+  try {
+    const { keyword, category, status, priority, department } = req.query;
+
+    let query = {};
+
+    if (keyword && keyword.trim()) {
+      query.$or = [
+        { title: { $regex: keyword, $options: 'i' } },
+        { description: { $regex: keyword, $options: 'i' } }
+      ];
+    }
+
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (priority && priority !== 'all') {
+      query.priority = priority;
+    }
+
+    if (department && department !== 'all') {
+      query.assignedDepartment = department;
+    }
+
+    if (req.user.role === 'employee') {
+      query.createdBy = req.user.id;
+    } else if (req.user.role === 'staff') {
+      query.assignedTo = req.user.id;
+    }
+
+    const complaints = await Complaint.find(query)
+      .populate('createdBy', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: complaints.length,
+      complaints
+    });
+
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
