@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ComplaintTimeline from "../components/ComplaintTimeline";
@@ -230,7 +230,7 @@ export default function MyComplaints() {
     );
   }
 
-  // EMPLOYEE VIEW
+  // EMPLOYEE VIEW (Fixed key warning)
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -258,8 +258,8 @@ export default function MyComplaints() {
           </thead>
           <tbody>
             {complaints.map(c => (
-              <>
-                <tr key={c._id}>
+              <React.Fragment key={c._id}>
+                <tr>
                   <td style={{ padding: "8px", borderTop: "1px solid #ddd" }}>
                     {editingId === c._id ? (
                       <input
@@ -329,7 +329,7 @@ export default function MyComplaints() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>

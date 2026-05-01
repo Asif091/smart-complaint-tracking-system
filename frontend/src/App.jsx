@@ -7,6 +7,7 @@ import { useAuth } from "./context/AuthContext";
 import Complaints from "./pages/Complaints";
 import SubmitComplaint from "./pages/SubmitComplaint";
 import MyComplaints from "./pages/MyComplaints";
+import ComplaintDetail from "./pages/ComplaintDetail";
 
 export default function App() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export default function App() {
           path="/my-complaints"
           element={user && user.role !== "admin" ? <MyComplaints /> : <Navigate to="/" />}
         />
-
+        <Route path="/complaint/:id" element={<ComplaintDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -53,7 +53,7 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role, department } = req.body;  // <<<<<< NEW: added department
+    const { name, email, password, role, department } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "All fields required" });
@@ -61,11 +61,9 @@ exports.createUser = async (req, res) => {
     if (role === "admin") {
       return res.status(403).json({ message: "Cannot create admin users. Contact developer." });
     }
-    // <<<<<< NEW - START: Validate department for employee role
     if (role === "employee" && !department) {
       return res.status(400).json({ message: "Department is required for employees" });
     }
-    // <<<<<< NEW - END
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -74,7 +72,6 @@ exports.createUser = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    // <<<<<< NEW - START: Build user data with department for employees
     const userData = {
       name,
       email,
@@ -85,9 +82,8 @@ exports.createUser = async (req, res) => {
     if (role === "employee" && department) {
       userData.department = department;
     }
-    // <<<<<< NEW - END
 
-    const user = await User.create(userData);  // <<<<<< NEW: using userData instead of direct object
+    const user = await User.create(userData);
 
     res.status(201).json(user);
   } catch (err) {
@@ -99,7 +95,6 @@ exports.deactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get current user to determine new status
     const currentUser = await User.findById(id);
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
@@ -107,7 +102,6 @@ exports.deactivateUser = async (req, res) => {
     
     console.log("Current user status:", currentUser.status);
     
-    // Toggle status: if active, make inactive; if inactive, make active
     const newStatus = currentUser.status === "active" ? "inactive" : "active";
     console.log("New status:", newStatus);
 
@@ -148,6 +142,19 @@ exports.updateUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // --- NEW: Create notification for the updated user (skip if deactivation? but this is update, not deactivation) ---
+    // Only notify if the user being updated is not the admin doing the update (optional)
+    if (user._id.toString() !== req.user.id) {
+      const createNotification = require('../utils/createNotification');
+      await createNotification(
+        user._id,
+        "account_updated",
+        null,
+        `Your account details have been updated by admin. New role: ${role}, Department: ${department || 'N/A'}`
+      );
+    }
+    // --- END NEW ---
 
     res.json(user);
   } catch (err) {

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import NotificationBell from "./NotificationBell";  // ADD THIS LINE
 
 export default function Layout({ children }) {
   const { user, loading, logout } = useAuth();
@@ -15,7 +16,7 @@ export default function Layout({ children }) {
             <>
               {user ? (
                 <>
-                  {/* 🔹 ROLE BASED MENU */}
+                  {/* 🔹 ROLE BASED MENU (unchanged) */}
                   {user.role === "admin" && (
                     <>
                       <Link to="/">Home</Link>
@@ -42,8 +43,9 @@ export default function Layout({ children }) {
                     </>
                   )}
 
-                  {/* 🔹 USER INFO */}
+                  {/* 🔹 USER INFO + NOTIFICATION BELL */}
                   <span className="nav-name">{user.name} ({user.role})</span>
+                  <NotificationBell />  {/* ADD THIS LINE */}
                   <button
                     type="button"
                     className="btn btn-ghost"

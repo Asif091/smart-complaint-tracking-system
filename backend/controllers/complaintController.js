@@ -25,7 +25,6 @@ const logAction = async (complaintId, userId, action, details = {}) => {
   }
 };
 
-
 exports.submitComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
@@ -71,7 +70,16 @@ exports.submitComplaint = async (req, res) => {
       comment: `Complaint submitted by ${user.name}`,
       metadata: { category, priority: priority || "medium", attachmentsCount: attachments.length }
     });
-
+    
+    console.log("🔔 Attempting to create notification for admin...");
+    const admin = await User.findOne({ role: "admin" });
+    console.log("Admin found:", admin ? admin.email : "NO ADMIN");
+    if (admin) {
+      const createNotification = require('../utils/createNotification');
+      await createNotification(admin._id, "complaint_created", complaint._id, `New complaint...`);
+      console.log("✅ Notification created");
+    }
+    
     res.status(201).json(complaint);
   } catch (err) {
     console.error(err);
@@ -210,6 +218,28 @@ exports.assignToStaff = async (req, res) => {
       }
     });
 
+    // NOTIFICATIONS: Notify staff and employee
+    const createNotification = require('../utils/createNotification');
+    
+    // Notify staff member
+    await createNotification(
+      staff._id,
+      "complaint_assigned",
+      complaint._id,
+      `New complaint assigned to you: "${complaint.title}"`
+    );
+    
+    // Notify employee who submitted the complaint
+    const employee = await User.findById(complaint.createdBy);
+    if (employee && employee._id.toString() !== staff._id.toString()) {
+      await createNotification(
+        employee._id,
+        "complaint_assigned",
+        complaint._id,
+        `Your complaint "${complaint.title}" has been assigned to ${staff.name}`
+      );
+    }
+
     res.json({ 
       message: `Complaint assigned to ${staff.name} successfully`, 
       complaint 
@@ -295,7 +325,6 @@ exports.getMyAssignedComplaintsGrouped = async (req, res) => {
   }
 };
 
-
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -355,6 +384,35 @@ exports.updateStatus = async (req, res) => {
       }
     });
 
+    // NOTIFICATIONS: Notify employee and staff (if not the one who changed)
+    const createNotification = require('../utils/createNotification');
+    
+    // Get the employee who created the complaint
+    const employee = await User.findById(complaint.createdBy);
+    
+    // Notify employee if they are not the one who changed status
+    if (employee && employee._id.toString() !== req.user.id) {
+      await createNotification(
+        employee._id,
+        "status_changed",
+        complaint._id,
+        `Your complaint "${complaint.title}" status changed from ${oldStatus} to ${status}`
+      );
+    }
+    
+    // Notify assigned staff if exists and not the one who changed status
+    if (complaint.assignedTo && complaint.assignedTo.toString() !== req.user.id) {
+      const staff = await User.findById(complaint.assignedTo);
+      if (staff && staff._id.toString() !== employee?._id.toString()) {
+        await createNotification(
+          staff._id,
+          "status_changed",
+          complaint._id,
+          `Complaint "${complaint.title}" status changed from ${oldStatus} to ${status}`
+        );
+      }
+    }
+
     res.json({ 
       success: true,
       message: `Status updated to ${status}`,
@@ -369,7 +427,7 @@ exports.updateStatus = async (req, res) => {
 };
 
 // ============================================
-// GET COMPLAINT HISTORY (NEW)
+// GET COMPLAINT HISTORY
 // ============================================
 exports.getComplaintHistory = async (req, res) => {
   try {
@@ -383,14 +441,14 @@ exports.getComplaintHistory = async (req, res) => {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-// Permission check - FIXED VERSION
-const isAdmin = req.user.role === "admin";
-const isAssignedStaff = complaint.assignedTo?._id?.toString() === req.user.id;
-const isCreator = complaint.createdBy?._id?.toString() === req.user.id;
+    // Permission check
+    const isAdmin = req.user.role === "admin";
+    const isAssignedStaff = complaint.assignedTo?._id?.toString() === req.user.id;
+    const isCreator = complaint.createdBy?._id?.toString() === req.user.id;
 
-if (!isAdmin && !isAssignedStaff && !isCreator) {
-  return res.status(403).json({ message: "Access denied" });
-}
+    if (!isAdmin && !isAssignedStaff && !isCreator) {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
     // Get action history
     const history = await ActionLog.find({ complaint: id })
@@ -426,7 +484,7 @@ if (!isAdmin && !isAssignedStaff && !isCreator) {
 };
 
 // ============================================
-// ADD COMMENT ONLY (NEW - No status change)
+// ADD COMMENT ONLY (No status change)
 // ============================================
 exports.addComment = async (req, res) => {
   try {
@@ -467,6 +525,21 @@ exports.addComment = async (req, res) => {
       metadata: { status: complaint.status }
     });
 
+    // NOTIFICATION: Notify employee (complainant) when a comment is added
+    // Skip if the commenter is the employee themselves
+    if (complaint.createdBy.toString() !== req.user.id) {
+      const createNotification = require('../utils/createNotification');
+      const employee = await User.findById(complaint.createdBy);
+      if (employee) {
+        await createNotification(
+          employee._id,
+          "comment_added",
+          complaint._id,
+          `New comment on your complaint "${complaint.title}" from ${user.name}`
+        );
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: "Comment added successfully",
@@ -480,7 +553,7 @@ exports.addComment = async (req, res) => {
 };
 
 // ============================================
-// GET COMPLAINT STATISTICS (NEW - For dashboard)
+// GET COMPLAINT STATISTICS (Dashboard)
 // ============================================
 exports.getComplaintStats = async (req, res) => {
   try {
@@ -548,7 +621,6 @@ exports.getComplaintStats = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.searchComplaints = async (req, res) => {
   try {

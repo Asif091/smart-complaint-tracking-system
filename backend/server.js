@@ -67,9 +67,13 @@ app.use("/api/users", userRoutes);
 const complaintRoutes = require("./routes/complaintRoutes");
 app.use("/api/complaints", complaintRoutes);
 
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log("JWT_SECRET:", process.env.JWT_SECRET);
 });
+
