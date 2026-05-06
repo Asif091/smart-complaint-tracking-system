@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-const categories = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
-const statuses = ["pending", "assigned", "in-progress", "resolved", "closed"];
+const categories = ["Hardware Issue", "Software Issue", "Network Problem", "Salary Dispute", "Leave Request", "Workplace Harassment", "Policy Suggestion", "Other"];
+const statuses = ["pending", "assigned", "in-progress", "resolved"];
 const priorities = ["Low", "Medium", "High", "Critical"];
+const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
 
 export default function ComplaintSearch({ onSearch, loading }) {
   const [keyword, setKeyword] = useState('');
@@ -58,7 +59,7 @@ export default function ComplaintSearch({ onSearch, loading }) {
 
         <select value={department} onChange={(e) => setDepartment(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}>
           <option value="all">All Departments</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          {departments.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
