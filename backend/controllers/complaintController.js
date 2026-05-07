@@ -455,14 +455,6 @@ exports.getComplaintHistory = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Calculate statistics
-    const stats = {
-      totalActions: history.length,
-      statusChanges: history.filter(h => h.action === "status_changed").length,
-      comments: history.filter(h => h.comment).length,
-      lastUpdated: history[0]?.createdAt || complaint.createdAt
-    };
-
     res.json({
       complaint: {
         _id: complaint._id,
@@ -473,8 +465,7 @@ exports.getComplaintHistory = async (req, res) => {
         createdAt: complaint.createdAt,
         resolutionTime: complaint.resolutionTime
       },
-      history,
-      stats
+      history
     });
 
   } catch (err) {
@@ -552,75 +543,7 @@ exports.addComment = async (req, res) => {
   }
 };
 
-// ============================================
-// GET COMPLAINT STATISTICS (Dashboard)
-// ============================================
-exports.getComplaintStats = async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin only." });
-    }
 
-    const totalComplaints = await Complaint.countDocuments();
-    
-    const statusCounts = await Complaint.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } }
-    ]);
-
-    const departmentCounts = await Complaint.aggregate([
-      { $group: { _id: "$assignedDepartment", count: { $sum: 1 } } },
-      { $match: { _id: { $ne: null } } }
-    ]);
-
-    const priorityCounts = await Complaint.aggregate([
-      { $group: { _id: "$priority", count: { $sum: 1 } } }
-    ]);
-
-    // Average resolution time
-    const resolutionStats = await Complaint.aggregate([
-      { $match: { status: "resolved", resolvedAt: { $ne: null } } },
-      { 
-        $project: { 
-          resolutionDays: { 
-            $divide: [
-              { $subtract: ["$resolvedAt", "$createdAt"] }, 
-              1000 * 60 * 60 * 24
-            ] 
-          } 
-        } 
-      },
-      { 
-        $group: { 
-          _id: null, 
-          avgResolutionDays: { $avg: "$resolutionDays" },
-          minResolutionDays: { $min: "$resolutionDays" },
-          maxResolutionDays: { $max: "$resolutionDays" }
-        } 
-      }
-    ]);
-
-    res.json({
-      totalComplaints,
-      statusCounts: statusCounts.reduce((acc, curr) => {
-        acc[curr._id] = curr.count;
-        return acc;
-      }, {}),
-      departmentCounts: departmentCounts.reduce((acc, curr) => {
-        acc[curr._id] = curr.count;
-        return acc;
-      }, {}),
-      priorityCounts: priorityCounts.reduce((acc, curr) => {
-        acc[curr._id] = curr.count;
-        return acc;
-      }, {}),
-      resolutionStats: resolutionStats[0] || { avgResolutionDays: 0 }
-    });
-
-  } catch (err) {
-    console.error("Error fetching complaint stats:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
 exports.searchComplaints = async (req, res) => {
   try {
@@ -671,5 +594,72 @@ exports.searchComplaints = async (req, res) => {
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.escalateComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const complaint = await Complaint.findById(id);
+    
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+    
+    if (complaint.escalationLevel >= 3) {
+      return res.status(400).json({ 
+        message: "Already at maximum escalation level" 
+      });
+    }
+
+    const priorities = ["low", "medium", "high", "critical"];
+    let currentIndex = -1;
+    
+    if (complaint.priority === "low"){
+      currentIndex = 0;
+    }
+    if (complaint.priority === "medium"){ 
+      currentIndex = 1;
+    }
+    if (complaint.priority === "high"){
+      currentIndex = 2;
+    }
+    if (complaint.priority === "critical"){ 
+      currentIndex = 3;
+    }
+    
+    if (currentIndex >= 3) {
+      return res.status(400).json({ message: "Already at highest priority!" });
+    }
+    
+    if (currentIndex === 0) {
+      complaint.priority = "medium";
+    }
+    if (currentIndex === 1) {
+      complaint.priority = "high";
+    }
+    if (currentIndex === 2) {
+      complaint.priority = "critical";
+    }
+    
+    if (!complaint.escalationLevel) {
+      complaint.escalationLevel = 0;
+    }
+    complaint.escalationLevel = complaint.escalationLevel + 1;
+    
+    await complaint.save();
+    
+    res.json({
+      success: true,
+      message: `Priority changed to ${complaint.priority}`,
+      priority: complaint.priority,
+      escalationLevel: complaint.escalationLevel
+    });
+    
+  } catch (error) {
+    console.error("Escalation error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

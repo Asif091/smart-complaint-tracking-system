@@ -229,6 +229,31 @@ export default function Complaints() {
     }
   };
 
+  const escalateComplaint = async (complaintId) => {
+    try {
+      const res = await axios.post(
+        `/api/complaints/${complaintId}/escalate`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      alert(res.data.message);
+      fetchComplaints(); 
+  
+      if (expandedHistory[complaintId]) {
+        fetchComplaintHistory(complaintId);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Cannot escalate complaint");
+    }
+  };
+
   // NEW: Add comment only (no status change)
   const addComment = async (complaintId) => {
     const comment = commentText[complaintId];
@@ -520,6 +545,29 @@ export default function Complaints() {
                       </select>
                     </div>
 
+                    <div>Priority: <strong style={{ 
+                      color: c.priority === "critical" ? "#f44336" : 
+                            c.priority === "high" ? "#ff9800" : 
+                            c.priority === "medium" ? "#2196f3" : "#4caf50" 
+                    }}>{c.priority}</strong></div>
+
+                    {c.priority !== "critical" && (
+                      <button
+                        onClick={() => escalateComplaint(c._id)}
+                        style={{
+                          marginLeft: "10px",
+                          padding: "5px 10px",
+                          backgroundColor: "#ff9800",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Escalate
+                      </button>
+                    )}
+
                     <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                     <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
                     
@@ -619,6 +667,29 @@ export default function Complaints() {
                     <option value="resolved">Resolved</option>
                   </select>
                 </div>
+
+                <div>Priority: <strong style={{ 
+                  color: c.priority === "critical" ? "#f44336" : 
+                        c.priority === "high" ? "#ff9800" : 
+                        c.priority === "medium" ? "#2196f3" : "#4caf50" 
+                }}>{c.priority}</strong></div>
+
+                {c.priority !== "critical" && (
+                  <button
+                    onClick={() => escalateComplaint(c._id)}
+                    style={{
+                      marginLeft: "10px",
+                      padding: "5px 10px",
+                      backgroundColor: "#ff9800",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Escalate
+                  </button>
+                )}
 
                 {/* NEW: History Toggle */}
                 <div style={{ marginTop: "15px" }}>

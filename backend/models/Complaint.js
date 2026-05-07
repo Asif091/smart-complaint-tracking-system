@@ -58,6 +58,24 @@ const complaintSchema = new mongoose.Schema(
       default: null
     },
 
+    escalationLevel: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 3
+    },
+
+    escalatedAt: {
+      type: Date,
+      default: null
+    },
+
+    escalatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
     // Store last comment for quick display
     lastComment: {
       text: String,
