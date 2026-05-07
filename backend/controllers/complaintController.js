@@ -663,3 +663,200 @@ exports.escalateComplaint = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ============================================
+// DASHBOARD / ANALYTICS (Sprint 4)
+// Features: Admin dashboard, Department-wise report,
+//           Priority-wise statistics, Average resolution time
+// ============================================
+exports.getDashboardStats = async (req, res) => {
+  try {
+    // Admin only
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admin only." });
+    }
+
+    // ─── 1. Overall Summary ───
+    const totalComplaints = await Complaint.countDocuments();
+    const resolvedComplaints = await Complaint.countDocuments({ status: "resolved" });
+    const pendingComplaints = await Complaint.countDocuments({ status: "pending" });
+    const assignedComplaints = await Complaint.countDocuments({ status: "assigned" });
+    const inProgressComplaints = await Complaint.countDocuments({ status: "in-progress" });
+
+    // Average resolution time (in days)
+    const resolvedDocs = await Complaint.find({ 
+      status: "resolved", 
+      resolvedAt: { $ne: null } 
+    })
+      .select("createdAt resolvedAt")
+      .lean();
+
+    let totalResolutionDays = 0;
+    resolvedDocs.forEach(doc => {
+      const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      totalResolutionDays += diffDays;
+    });
+
+    const averageResolutionTime = resolvedDocs.length > 0
+      ? (totalResolutionDays / resolvedDocs.length).toFixed(1)
+      : 0;
+
+    // ─── 2. Department-wise Report ───
+    const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
+    
+    const departmentReport = [];
+    
+    for (const dept of departments) {
+      const total = await Complaint.countDocuments({ assignedDepartment: dept });
+      const resolved = await Complaint.countDocuments({ assignedDepartment: dept, status: "resolved" });
+      const pending = await Complaint.countDocuments({ assignedDepartment: dept, status: "pending" });
+      const inProgress = await Complaint.countDocuments({ assignedDepartment: dept, status: "in-progress" });
+      const assigned = await Complaint.countDocuments({ assignedDepartment: dept, status: "assigned" });
+
+      // Avg resolution time per department
+      const deptResolvedDocs = await Complaint.find({ 
+        assignedDepartment: dept, 
+        status: "resolved", 
+        resolvedAt: { $ne: null } 
+      })
+        .select("createdAt resolvedAt")
+        .lean();
+
+      let deptTotalDays = 0;
+      deptResolvedDocs.forEach(doc => {
+        const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        deptTotalDays += diffDays;
+      });
+
+      const deptAvgResolution = deptResolvedDocs.length > 0
+        ? (deptTotalDays / deptResolvedDocs.length).toFixed(1)
+        : 0;
+
+      departmentReport.push({
+        department: dept,
+        total,
+        pending,
+        assigned,
+        inProgress,
+        resolved,
+        averageResolutionTime: parseFloat(deptAvgResolution),
+        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) : 0
+      });
+    }
+
+    // ─── 3. Priority-wise Statistics ───
+    const priorities = ["low", "medium", "high", "critical"];
+    
+    const priorityReport = [];
+    
+    for (const priority of priorities) {
+      const total = await Complaint.countDocuments({ priority });
+      const resolved = await Complaint.countDocuments({ priority, status: "resolved" });
+      const pending = await Complaint.countDocuments({ priority, status: "pending" });
+      const inProgress = await Complaint.countDocuments({ priority, status: "in-progress" });
+      const assigned = await Complaint.countDocuments({ priority, status: "assigned" });
+
+      // Average resolution time per priority
+      const priorityResolvedDocs = await Complaint.find({ 
+        priority, 
+        status: "resolved", 
+        resolvedAt: { $ne: null } 
+      })
+        .select("createdAt resolvedAt")
+        .lean();
+
+      let priorityTotalDays = 0;
+      priorityResolvedDocs.forEach(doc => {
+        const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        priorityTotalDays += diffDays;
+      });
+
+      const priorityAvgResolution = priorityResolvedDocs.length > 0
+        ? (priorityTotalDays / priorityResolvedDocs.length).toFixed(1)
+        : 0;
+
+      priorityReport.push({
+        priority,
+        total,
+        pending,
+        assigned,
+        inProgress,
+        resolved,
+        averageResolutionTime: parseFloat(priorityAvgResolution)
+      });
+    }
+
+    // ─── 4. Recent Activity (last 10 actions) ───
+    const recentActivity = await ActionLog.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Attach complaint title to each activity
+    for (const activity of recentActivity) {
+      if (activity.complaint) {
+        const comp = await Complaint.findById(activity.complaint).select("title").lean();
+        activity.complaintTitle = comp ? comp.title : "Unknown";
+      } else {
+        activity.complaintTitle = "Unknown";
+      }
+    }
+
+    // ─── 5. Category Breakdown ───
+    const categoryBreakdown = await Complaint.aggregate([
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    // ─── Final Response ───
+    res.json({
+      success: true,
+      summary: {
+        totalComplaints,
+        resolvedComplaints,
+        pendingComplaints,
+        assignedComplaints,
+        inProgressComplaints,
+        averageResolutionTime: parseFloat(averageResolutionTime),
+        resolutionRate: totalComplaints > 0 
+          ? ((resolvedComplaints / totalComplaints) * 100).toFixed(1) 
+          : 0
+      },
+      departmentReport,
+      priorityReport,
+      recentActivity: recentActivity.map(a => ({
+        _id: a._id,
+        action: a.action,
+        performedByName: a.performedByName,
+        performedByRole: a.performedByRole,
+        complaintTitle: a.complaintTitle || "Unknown",
+        createdAt: a.createdAt
+      })),
+      categoryBreakdown
+    });
+
+  } catch (err) {
+    console.error("Dashboard stats error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = {
+  submitComplaint: exports.submitComplaint,
+  getComplaints: exports.getComplaints,
+  getMyComplaints: exports.getMyComplaints,
+  updateComplaint: exports.updateComplaint,
+  assignToStaff: exports.assignToStaff,
+  getComplaintsGroupedByDepartment: exports.getComplaintsGroupedByDepartment,
+  getMyAssignedComplaintsGrouped: exports.getMyAssignedComplaintsGrouped,
+  updateStatus: exports.updateStatus,
+  getComplaintHistory: exports.getComplaintHistory,
+  addComment: exports.addComment,
+  searchComplaints: exports.searchComplaints,
+  escalateComplaint: exports.escalateComplaint,
+  getDashboardStats: exports.getDashboardStats
+};

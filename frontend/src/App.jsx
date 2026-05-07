@@ -8,6 +8,7 @@ import Complaints from "./pages/Complaints";
 import SubmitComplaint from "./pages/SubmitComplaint";
 import MyComplaints from "./pages/MyComplaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
+import ReportsPage from "./pages/ReportsPage";
 
 export default function App() {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
           element={user && user.role !== "admin" ? <MyComplaints /> : <Navigate to="/" />}
         />
         <Route path="/complaint/:id" element={<ComplaintDetail />} />
+        <Route path="/reports" element={user?.role === "admin" ? <ReportsPage /> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

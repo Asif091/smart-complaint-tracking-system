@@ -14,7 +14,7 @@ const {
   updateStatus,
   getComplaintHistory,    
   addComment,             
-  getComplaintStats,       
+  getDashboardStats,       
   searchComplaints,
   escalateComplaint  
 } = require("../controllers/complaintController");
@@ -34,6 +34,9 @@ router.get("/admin/grouped", auth, authorize("admin"), getComplaintsGroupedByDep
 
 // Staff: Get assigned complaints grouped by department
 router.get("/staff/grouped", auth, authorize("staff"), getMyAssignedComplaintsGrouped);
+
+// Dashboard stats (Admin only)
+router.get("/stats/dashboard", auth, getDashboardStats);
 
 router.get("/:id/history", auth, getComplaintHistory);
 
