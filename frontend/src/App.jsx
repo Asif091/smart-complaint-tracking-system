@@ -9,6 +9,8 @@ import SubmitComplaint from "./pages/SubmitComplaint";
 import MyComplaints from "./pages/MyComplaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import ReportsPage from "./pages/ReportsPage";
+import DepartmentReport from './pages/DepartmentReport';
+
 
 export default function App() {
   const { user } = useAuth();
@@ -39,6 +41,7 @@ export default function App() {
         <Route path="/complaint/:id" element={<ComplaintDetail />} />
         <Route path="/reports" element={user?.role === "admin" ? <ReportsPage /> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/reports/department" element={<DepartmentReport />} />
       </Routes>
     </Layout>
   );

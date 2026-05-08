@@ -70,6 +70,9 @@ app.use("/api/complaints", complaintRoutes);
 const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/notifications', notificationRoutes);
 
+const reportRoutes = require('./routes/reportRoutes');
+app.use('/api/reports', reportRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
