@@ -666,192 +666,208 @@ exports.escalateComplaint = async (req, res) => {
 
 exports.getDashboardStats = async (req, res) => {
   try {
-    // Admin only
+    // Check if user is admin
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
 
-    // ─── 1. Overall Summary ───
-    const totalComplaints = await Complaint.countDocuments();
-    const resolvedComplaints = await Complaint.countDocuments({ status: "resolved" });
-    const pendingComplaints = await Complaint.countDocuments({ status: "pending" });
-    const assignedComplaints = await Complaint.countDocuments({ status: "assigned" });
-    const inProgressComplaints = await Complaint.countDocuments({ status: "in-progress" });
+    const allComplaints = await Complaint.find({});
 
-    // Average resolution time (in days)
-    const resolvedDocs = await Complaint.find({ 
-      status: "resolved", 
-      resolvedAt: { $ne: null } 
-    })
-      .select("createdAt resolvedAt")
-      .lean();
-
+    let totalComplaints = 0;
+    let resolvedComplaints = 0;
+    let pendingComplaints = 0;
+    let assignedComplaints = 0;
+    let inProgressComplaints = 0;
+    
     let totalResolutionDays = 0;
-    resolvedDocs.forEach(doc => {
-      const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      totalResolutionDays += diffDays;
-    });
+    let resolvedCountForAvg = 0;
 
-    const averageResolutionTime = resolvedDocs.length > 0
-      ? (totalResolutionDays / resolvedDocs.length).toFixed(1)
-      : 0;
-
-    // ─── 2. Department-wise Report ───
-    const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
-    
-    const departmentReport = [];
-    
-    for (const dept of departments) {
-      const total = await Complaint.countDocuments({ assignedDepartment: dept });
-      const resolved = await Complaint.countDocuments({ assignedDepartment: dept, status: "resolved" });
-      const pending = await Complaint.countDocuments({ assignedDepartment: dept, status: "pending" });
-      const inProgress = await Complaint.countDocuments({ assignedDepartment: dept, status: "in-progress" });
-      const assigned = await Complaint.countDocuments({ assignedDepartment: dept, status: "assigned" });
-
-      // Avg resolution time per department
-      const deptResolvedDocs = await Complaint.find({ 
-        assignedDepartment: dept, 
-        status: "resolved", 
-        resolvedAt: { $ne: null } 
-      })
-        .select("createdAt resolvedAt")
-        .lean();
-
-      let deptTotalDays = 0;
-      deptResolvedDocs.forEach(doc => {
-        const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        deptTotalDays += diffDays;
-      });
-
-      const deptAvgResolution = deptResolvedDocs.length > 0
-        ? (deptTotalDays / deptResolvedDocs.length).toFixed(1)
-        : 0;
-
-      departmentReport.push({
-        department: dept,
-        total,
-        pending,
-        assigned,
-        inProgress,
-        resolved,
-        averageResolutionTime: parseFloat(deptAvgResolution),
-        resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(1) : 0
-      });
-    }
-
-    // ─── 3. Priority-wise Statistics ───
-    const priorities = ["low", "medium", "high", "critical"];
-    
-    const priorityReport = [];
-    
-    for (const priority of priorities) {
-      const total = await Complaint.countDocuments({ priority });
-      const resolved = await Complaint.countDocuments({ priority, status: "resolved" });
-      const pending = await Complaint.countDocuments({ priority, status: "pending" });
-      const inProgress = await Complaint.countDocuments({ priority, status: "in-progress" });
-      const assigned = await Complaint.countDocuments({ priority, status: "assigned" });
-
-      // Average resolution time per priority
-      const priorityResolvedDocs = await Complaint.find({ 
-        priority, 
-        status: "resolved", 
-        resolvedAt: { $ne: null } 
-      })
-        .select("createdAt resolvedAt")
-        .lean();
-
-      let priorityTotalDays = 0;
-      priorityResolvedDocs.forEach(doc => {
-        const diffTime = Math.abs(new Date(doc.resolvedAt) - new Date(doc.createdAt));
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        priorityTotalDays += diffDays;
-      });
-
-      const priorityAvgResolution = priorityResolvedDocs.length > 0
-        ? (priorityTotalDays / priorityResolvedDocs.length).toFixed(1)
-        : 0;
-
-      priorityReport.push({
-        priority,
-        total,
-        pending,
-        assigned,
-        inProgress,
-        resolved,
-        averageResolutionTime: parseFloat(priorityAvgResolution)
-      });
-    }
-
-    // ─── 4. Recent Activity (last 10 actions) ───
-    const recentActivity = await ActionLog.find()
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean();
-
-    // Attach complaint title to each activity
-    for (const activity of recentActivity) {
-      if (activity.complaint) {
-        const comp = await Complaint.findById(activity.complaint).select("title").lean();
-        activity.complaintTitle = comp ? comp.title : "Unknown";
-      } else {
-        activity.complaintTitle = "Unknown";
+    for (let i = 0; i < allComplaints.length; i++) {
+      const complaint = allComplaints[i];
+      totalComplaints = totalComplaints + 1;
+      
+      // Count by status
+      if (complaint.status === "pending") {
+        pendingComplaints = pendingComplaints + 1;
+      } else if (complaint.status === "assigned") {
+        assignedComplaints = assignedComplaints + 1;
+      } else if (complaint.status === "in-progress") {
+        inProgressComplaints = inProgressComplaints + 1;
+      } else if (complaint.status === "resolved") {
+        resolvedComplaints = resolvedComplaints + 1;
+      }
+      
+      // Calculate resolution time for resolved complaints
+      if (complaint.status === "resolved") {
+        if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
+          const createdTime = new Date(complaint.createdAt);
+          const resolvedTime = new Date(complaint.resolvedAt);
+          const differenceInMilliseconds = resolvedTime - createdTime;
+          const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
+          totalResolutionDays = totalResolutionDays + differenceInDays;
+          resolvedCountForAvg = resolvedCountForAvg + 1;
+        }
       }
     }
+    
+    // Calculate average resolution time
+    let averageResolutionTime = 0;
+    if (resolvedCountForAvg > 0) {
+      averageResolutionTime = totalResolutionDays / resolvedCountForAvg;
+      averageResolutionTime = Number(averageResolutionTime.toFixed(1));
+    }
+    
+    // Calculate resolution rate
+    let resolutionRate = 0;
+    if (totalComplaints > 0) {
+      resolutionRate = (resolvedComplaints / totalComplaints) * 100;
+      resolutionRate = Number(resolutionRate.toFixed(1));
+    }
 
-    // ─── 5. Category Breakdown ───
-    const categoryBreakdown = await Complaint.aggregate([
-      { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
+    const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
+    const departmentReport = [];
+    
+    for (let i = 0; i < departments.length; i++) {
+      const departmentName = departments[i];
+      
+      let departmentTotal = 0;
+      let departmentResolved = 0;
+      let departmentPending = 0;
+      let departmentAssigned = 0;
+      let departmentInProgress = 0;
+      let departmentTotalResolutionDays = 0;
+      let departmentResolvedCount = 0;
+      
+      for (let j = 0; j < allComplaints.length; j++) {
+        const complaint = allComplaints[j];
+        
+        if (complaint.assignedDepartment === departmentName) {
+          departmentTotal = departmentTotal + 1;
+          
+          if (complaint.status === "pending") {
+            departmentPending = departmentPending + 1;
+          } else if (complaint.status === "assigned") {
+            departmentAssigned = departmentAssigned + 1;
+          } else if (complaint.status === "in-progress") {
+            departmentInProgress = departmentInProgress + 1;
+          } else if (complaint.status === "resolved") {
+            departmentResolved = departmentResolved + 1;
+          }
+          
+          if (complaint.status === "resolved") {
+            if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
+              const createdTime = new Date(complaint.createdAt);
+              const resolvedTime = new Date(complaint.resolvedAt);
+              const differenceInMilliseconds = resolvedTime - createdTime;
+              const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
+              departmentTotalResolutionDays = departmentTotalResolutionDays + differenceInDays;
+              departmentResolvedCount = departmentResolvedCount + 1;
+            }
+          }
+        }
+      }
+      
+      let departmentAverageResolution = 0;
+      if (departmentResolvedCount > 0) {
+        departmentAverageResolution = departmentTotalResolutionDays / departmentResolvedCount;
+        departmentAverageResolution = Number(departmentAverageResolution.toFixed(1));
+      }
+      
+      let departmentResolutionRate = 0;
+      if (departmentTotal > 0) {
+        departmentResolutionRate = (departmentResolved / departmentTotal) * 100;
+        departmentResolutionRate = Number(departmentResolutionRate.toFixed(1));
+      }
+      
+      departmentReport.push({
+        department: departmentName,
+        total: departmentTotal,
+        pending: departmentPending,
+        assigned: departmentAssigned,
+        inProgress: departmentInProgress,
+        resolved: departmentResolved,
+        averageResolutionTime: departmentAverageResolution,
+        resolutionRate: departmentResolutionRate
+      });
+    }
 
-    // ─── Final Response ───
+    const priorities = ["low", "medium", "high", "critical"];
+    const priorityReport = [];
+    
+    for (let i = 0; i < priorities.length; i++) {
+      const priorityName = priorities[i];
+      
+      let priorityTotal = 0;
+      let priorityResolved = 0;
+      let priorityPending = 0;
+      let priorityAssigned = 0;
+      let priorityInProgress = 0;
+      let priorityTotalResolutionDays = 0;
+      let priorityResolvedCount = 0;
+      
+      for (let j = 0; j < allComplaints.length; j++) {
+        const complaint = allComplaints[j];
+        
+        if (complaint.priority === priorityName) {
+          priorityTotal = priorityTotal + 1;
+          
+          if (complaint.status === "pending") {
+            priorityPending = priorityPending + 1;
+          } else if (complaint.status === "assigned") {
+            priorityAssigned = priorityAssigned + 1;
+          } else if (complaint.status === "in-progress") {
+            priorityInProgress = priorityInProgress + 1;
+          } else if (complaint.status === "resolved") {
+            priorityResolved = priorityResolved + 1;
+          }
+          
+          if (complaint.status === "resolved") {
+            if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
+              const createdTime = new Date(complaint.createdAt);
+              const resolvedTime = new Date(complaint.resolvedAt);
+              const differenceInMilliseconds = resolvedTime - createdTime;
+              const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
+              priorityTotalResolutionDays = priorityTotalResolutionDays + differenceInDays;
+              priorityResolvedCount = priorityResolvedCount + 1;
+            }
+          }
+        }
+      }
+      
+      let priorityAverageResolution = 0;
+      if (priorityResolvedCount > 0) {
+        priorityAverageResolution = priorityTotalResolutionDays / priorityResolvedCount;
+        priorityAverageResolution = Number(priorityAverageResolution.toFixed(1));
+      }
+      
+      priorityReport.push({
+        priority: priorityName,
+        total: priorityTotal,
+        pending: priorityPending,
+        assigned: priorityAssigned,
+        inProgress: priorityInProgress,
+        resolved: priorityResolved,
+        averageResolutionTime: priorityAverageResolution
+      });
+    }
+
     res.json({
       success: true,
       summary: {
-        totalComplaints,
-        resolvedComplaints,
-        pendingComplaints,
-        assignedComplaints,
-        inProgressComplaints,
-        averageResolutionTime: parseFloat(averageResolutionTime),
-        resolutionRate: totalComplaints > 0 
-          ? ((resolvedComplaints / totalComplaints) * 100).toFixed(1) 
-          : 0
+        totalComplaints: totalComplaints,
+        resolvedComplaints: resolvedComplaints,
+        pendingComplaints: pendingComplaints,
+        assignedComplaints: assignedComplaints,
+        inProgressComplaints: inProgressComplaints,
+        averageResolutionTime: averageResolutionTime,
+        resolutionRate: resolutionRate
       },
-      departmentReport,
-      priorityReport,
-      recentActivity: recentActivity.map(a => ({
-        _id: a._id,
-        action: a.action,
-        performedByName: a.performedByName,
-        performedByRole: a.performedByRole,
-        complaintTitle: a.complaintTitle || "Unknown",
-        createdAt: a.createdAt
-      })),
-      categoryBreakdown
+      departmentReport: departmentReport,
+      priorityReport: priorityReport
     });
 
-  } catch (err) {
-    console.error("Dashboard stats error:", err);
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
     res.status(500).json({ message: "Server error" });
   }
-};
-
-
-module.exports = {
-  submitComplaint: exports.submitComplaint,
-  getComplaints: exports.getComplaints,
-  getMyComplaints: exports.getMyComplaints,
-  updateComplaint: exports.updateComplaint,
-  assignToStaff: exports.assignToStaff,
-  getComplaintsGroupedByDepartment: exports.getComplaintsGroupedByDepartment,
-  getMyAssignedComplaintsGrouped: exports.getMyAssignedComplaintsGrouped,
-  updateStatus: exports.updateStatus,
-  getComplaintHistory: exports.getComplaintHistory,
-  addComment: exports.addComment,
-  searchComplaints: exports.searchComplaints,
-  escalateComplaint: exports.escalateComplaint,
-  getDashboardStats: exports.getDashboardStats
 };
