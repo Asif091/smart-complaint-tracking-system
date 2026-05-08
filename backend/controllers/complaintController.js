@@ -664,11 +664,6 @@ exports.escalateComplaint = async (req, res) => {
   }
 };
 
-// ============================================
-// DASHBOARD / ANALYTICS (Sprint 4)
-// Features: Admin dashboard, Department-wise report,
-//           Priority-wise statistics, Average resolution time
-// ============================================
 exports.getDashboardStats = async (req, res) => {
   try {
     // Admin only

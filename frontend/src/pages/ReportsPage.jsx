@@ -33,13 +33,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Department report state
-  const [deptStats, setDeptStats] = useState([]);
-  const [deptLoading, setDeptLoading] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  // State for chart metric
   const [chartMetric, setChartMetric] = useState("total");
-  const [avgUnit, setAvgUnit] = useState("days");
 
   const metricLabels = {
     total: "Total Complaints",
@@ -55,7 +50,6 @@ export default function ReportsPage() {
       return;
     }
     fetchDashboard();
-    fetchDepartmentStats();
   }, []);
 
   const fetchDashboard = async () => {
@@ -75,64 +69,40 @@ export default function ReportsPage() {
     }
   };
 
-  const fetchDepartmentStats = async (applyDate = false) => {
-    setDeptLoading(true);
-    try {
-      const token = getToken();
-      let url = "/api/reports/department-stats";
-      if (applyDate && startDate && endDate) {
-        url += `?startDate=${startDate}&endDate=${endDate}`;
-      }
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await res.json();
-      if (result.success) setDeptStats(result.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setDeptLoading(false);
-    }
-  };
-
-  const applyDateFilter = () => {
-    fetchDepartmentStats(true);
-  };
-
-  const clearDateFilter = () => {
-    setStartDate("");
-    setEndDate("");
-    fetchDepartmentStats(false);
-  };
-
-  const chartData = deptStats.map(dept => ({
-    department: dept.department,
-    value: dept[chartMetric]
-  }));
-
   if (loading) return <div className="loading-screen">Loading dashboard...</div>;
   if (error) return <div style={{ color: "var(--danger)", padding: "2rem" }}>{error}</div>;
   if (!data) return null;
 
-  const { summary } = data;
+  const { summary, priorityReport, departmentReport } = data;
+  const totalComplaints = summary.totalComplaints;
+
+  // Priority colors
+  const priorityColors = {
+    low: "#4caf50",
+    medium: "#2196f3",
+    high: "#ff9800",
+    critical: "#f44336"
+  };
+
+  // Prepare chart data
+  const chartData = departmentReport ? departmentReport.map(dept => ({
+    department: dept.department,
+    total: dept.total,
+    pending: dept.pending,
+    assigned: dept.assigned,
+    inProgress: dept.inProgress,
+    resolved: dept.resolved
+  })) : [];
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
       <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1.5rem" }}>
         Admin Dashboard
       </h1>
 
-      {/* Summary cards */}
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "2rem" }}>
-        <StatCard label="Total Complaints" value={summary.totalComplaints} color="#2196f3" />
-        <StatCard label="Pending" value={summary.pendingComplaints} color="#ff9800" />
-        <StatCard label="Assigned" value={summary.assignedComplaints} color="#9c27b0" />
-        <StatCard label="In Progress" value={summary.inProgressComplaints} color="#ff5722" />
-        <StatCard label="Resolved" value={summary.resolvedComplaints} color="#4caf50" />
-        <StatCard label="Avg Time" value={`${summary.averageResolutionTime}d`} color="#00bcd4" />
-      </div>
-
-      {/* DEPARTMENT-WISE REPORT */}
+      {/* ============================================ */}
+      {/* DEPARTMENT-WISE REPORT WITH CHART */}
+      {/* ============================================ */}
       <div style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -144,125 +114,73 @@ export default function ReportsPage() {
           Department-wise Report
         </h3>
 
-        {/* Date filter */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "flex-end", marginBottom: "20px", flexWrap: "wrap" }}>
-          <div>
-            <div>Start Date</div>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: "6px" }} />
-          </div>
-          <div>
-            <div>End Date</div>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: "6px" }} />
-          </div>
-          <button onClick={applyDateFilter} style={{ padding: "6px 12px" }}>Apply</button>
-          <button onClick={clearDateFilter} style={{ padding: "6px 12px" }}>Clear</button>
+        {/* Table */}
+        <div style={{ overflowX: "auto", marginBottom: "30px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f2f2f2" }}>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Department</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Total</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Pending</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Assigned</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>In Progress</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution</th>
+              </tr>
+            </thead>
+            <tbody>
+              {departmentReport && departmentReport.map(dept => (
+                <tr key={dept.department}>
+                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{dept.department}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.total}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.pending}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.assigned}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.inProgress}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
+                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} days` : "N/A"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {deptLoading ? (
-          <p>Loading department stats...</p>
-        ) : (
-          <>
-            {/* Table */}
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#f2f2f2" }}>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Department</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Total</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Pending</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Assigned</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>In Progress</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
-                    <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deptStats.map(dept => (
-                    <tr key={dept.department}>
-                      <td style={{ padding: "8px", border: "1px solid #ddd" }}>{dept.department}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.total}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.pending}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.assigned}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.inProgress}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
-                      <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
-                        {avgUnit === "days"
-                          ? (dept.avgResolutionDays !== null ? `${dept.avgResolutionDays}d` : "N/A")
-                          : (dept.avgResolutionHours !== null ? `${dept.avgResolutionHours}h` : "N/A")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Unit toggle buttons (instead of inside th) */}
-            <div style={{ marginBottom: "15px" }}>
-              <span>Show avg resolution in: </span>
-              <button
-                onClick={() => setAvgUnit("days")}
-                style={{
-                  padding: "4px 8px",
-                  marginRight: "5px",
-                  backgroundColor: avgUnit === "days" ? "#4CAF50" : "#f0f0f0",
-                  color: avgUnit === "days" ? "white" : "black",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Days
-              </button>
-              <button
-                onClick={() => setAvgUnit("hours")}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: avgUnit === "hours" ? "#4CAF50" : "#f0f0f0",
-                  color: avgUnit === "hours" ? "white" : "black",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer"
-                }}
-              >
-                Hours
-              </button>
-            </div>
-
-            {/* Chart */}
-            <h4>Visual Chart</h4>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "15px" }}>
-              {Object.keys(metricLabels).map(metric => (
-                <button
-                  key={metric}
-                  onClick={() => setChartMetric(metric)}
-                  style={{
-                    padding: "6px 12px",
-                    backgroundColor: chartMetric === metric ? "#4CAF50" : "#f0f0f0",
-                    color: chartMetric === metric ? "white" : "black",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer"
-                  }}
-                >
-                  {metricLabels[metric]}
-                </button>
-              ))}
-            </div>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="department" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="value" fill="#8884d8" name={metricLabels[chartMetric]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
+        {/* Chart Section */}
+        <h4>Visual Chart</h4>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "15px" }}>
+          {Object.keys(metricLabels).map(metric => (
+            <button
+              key={metric}
+              onClick={() => setChartMetric(metric)}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: chartMetric === metric ? "#4CAF50" : "#f0f0f0",
+                color: chartMetric === metric ? "white" : "black",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}
+            >
+              {metricLabels[metric]}
+            </button>
+          ))}
+        </div>
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="department" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey={chartMetric} fill="#8884d8" name={metricLabels[chartMetric]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* PRIORITY-WISE STATISTICS placeholder */}
+      {/* ============================================ */}
+      {/* PRIORITY-WISE STATISTICS */}
+      {/* ============================================ */}
       <div style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -273,12 +191,50 @@ export default function ReportsPage() {
         <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>
           Priority-wise Statistics
         </h3>
-        <p style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
-          [Template] Add priority-wise statistics here.
-        </p>
+
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f2f2f2" }}>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Priority</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Count</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {priorityReport && priorityReport.map(p => {
+                const percentage = totalComplaints > 0 ? ((p.total / totalComplaints) * 100).toFixed(1) : 0;
+                return (
+                  <tr key={p.priority}>
+                    <td style={{ padding: "8px", border: "1px solid #ddd" }}>
+                      <span style={{
+                        backgroundColor: priorityColors[p.priority],
+                        color: "white",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px"
+                      }}>
+                        {p.priority}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{p.total}</td>
+                    <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{percentage}%</td>
+                  </tr>
+                );
+              })}
+              <tr style={{ backgroundColor: "#000000", fontWeight: "bold" }}>
+                <td style={{ padding: "8px", border: "1px solid #ddd" }}>Total</td>
+                <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{totalComplaints}</td>
+                <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>100%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* ============================================ */}
       {/* AVERAGE RESOLUTION TIME ANALYTICS */}
+      {/* ============================================ */}
       <div style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -299,6 +255,7 @@ export default function ReportsPage() {
           <StatCard label="Resolution Rate" value={`${summary.resolutionRate}%`} color="#795548" />
         </div>
 
+        {/* Average Resolution by Department */}
         <div style={{ overflowX: "auto", marginBottom: "1.5rem" }}>
           <h4 style={{ margin: "0 0 0.75rem 0" }}>Average Resolution by Department</h4>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -310,7 +267,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.departmentReport.map(dept => (
+              {departmentReport && departmentReport.map(dept => (
                 <tr key={dept.department}>
                   <td style={{ padding: "8px", border: "1px solid #ddd" }}>{dept.department}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
@@ -323,6 +280,7 @@ export default function ReportsPage() {
           </table>
         </div>
 
+        {/* Average Resolution by Priority */}
         <div style={{ overflowX: "auto" }}>
           <h4 style={{ margin: "0 0 0.75rem 0" }}>Average Resolution by Priority</h4>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -334,13 +292,13 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.priorityReport.map(priority => (
-                <tr key={priority.priority}>
-                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{priority.priority}</td>
+              {priorityReport && priorityReport.map(p => (
+                <tr key={p.priority}>
+                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{p.priority}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
-                    {priority.averageResolutionTime ? `${priority.averageResolutionTime} days` : "N/A"}
+                    {p.averageResolutionTime ? `${p.averageResolutionTime} days` : "N/A"}
                   </td>
-                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{priority.resolved}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{p.resolved}</td>
                 </tr>
               ))}
             </tbody>
