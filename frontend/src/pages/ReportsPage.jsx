@@ -187,8 +187,8 @@ export default function ReportsPage() {
                       <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
                       <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
                         {avgUnit === "days"
-                          ? (dept.avgResolutionDays ?? "N/A")
-                          : (dept.avgResolutionHours ?? "N/A")}
+                          ? (dept.avgResolutionDays !== null ? `${dept.avgResolutionDays}d` : "N/A")
+                          : (dept.avgResolutionHours !== null ? `${dept.avgResolutionHours}h` : "N/A")}
                       </td>
                     </tr>
                   ))}
@@ -278,7 +278,7 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      {/* AVERAGE RESOLUTION TIME ANALYTICS placeholder */}
+      {/* AVERAGE RESOLUTION TIME ANALYTICS */}
       <div style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -289,9 +289,63 @@ export default function ReportsPage() {
         <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.2rem" }}>
           Average Resolution Time Analytics
         </h3>
-        <p style={{ color: "var(--text-muted)", fontStyle: "italic" }}>
-          [Template] Add average resolution time analytics here.
+        <p style={{ margin: "0 0 1rem 0", color: "var(--text-muted)" }}>
+          This analytics section shows average resolution times for complaints overall, by department, and by priority.
         </p>
+
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+          <StatCard label="Overall Avg Resolution" value={`${summary.averageResolutionTime} days`} color="#00bcd4" />
+          <StatCard label="Resolved Complaints" value={summary.resolvedComplaints} color="#4caf50" />
+          <StatCard label="Resolution Rate" value={`${summary.resolutionRate}%`} color="#795548" />
+        </div>
+
+        <div style={{ overflowX: "auto", marginBottom: "1.5rem" }}>
+          <h4 style={{ margin: "0 0 0.75rem 0" }}>Average Resolution by Department</h4>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f2f2f2" }}>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Department</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.departmentReport.map(dept => (
+                <tr key={dept.department}>
+                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{dept.department}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
+                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} days` : "N/A"}
+                  </td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <h4 style={{ margin: "0 0 0.75rem 0" }}>Average Resolution by Priority</h4>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f2f2f2" }}>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Priority</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.priorityReport.map(priority => (
+                <tr key={priority.priority}>
+                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{priority.priority}</td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
+                    {priority.averageResolutionTime ? `${priority.averageResolutionTime} days` : "N/A"}
+                  </td>
+                  <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{priority.resolved}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
