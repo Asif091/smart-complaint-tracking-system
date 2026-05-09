@@ -6,7 +6,6 @@ export default function SubmitComplaint() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [department, setDepartment] = useState("");  // ← NEW
   const [attachments, setAttachments] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,15 +23,6 @@ export default function SubmitComplaint() {
     "Workplace Harassment",
     "Policy Suggestion",
     "Other"
-  ];
-
-  // ← NEW: Departments array
-  const departments = [
-    "HR",
-    "IT",
-    "Finance",
-    "Marketing & Sales",
-    "Software & Product Development"
   ];
 
   const allowedTypes = [
@@ -77,9 +67,8 @@ export default function SubmitComplaint() {
     setError("");
     setSuccess("");
 
-    // ← UPDATED: Added department check
-    if (!title || !description || !category || !department) {
-      setError("All fields required (including department)");
+    if (!title || !description || !category) {
+      setError("Title, description and category are required");
       setLoading(false);
       return;
     }
@@ -90,7 +79,6 @@ export default function SubmitComplaint() {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("category", category);
-      formData.append("department", department);  // ← NEW
       attachments.forEach(file => {
         formData.append("attachments", file);
       });
@@ -114,7 +102,6 @@ export default function SubmitComplaint() {
       setTitle("");
       setDescription("");
       setCategory("");
-      setDepartment("");  // ← NEW
       setAttachments([]);
       setTimeout(() => navigate("/my-complaints"), 1500);
 
@@ -158,17 +145,6 @@ export default function SubmitComplaint() {
         >
           <option value="">Select Category</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-
-        {/* ===== NEW: Department Dropdown ===== */}
-        <select
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-          required
-          style={{ width: "100%", padding: "8px", margin: "5px 0" }}
-        >
-          <option value="">Select Department</option>
-          {departments.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
 
         <div style={{ margin: "10px 0" }}>
