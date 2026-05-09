@@ -36,9 +36,7 @@ exports.submitComplaint = async (req, res) => {
     const user = await User.findById(req.user.id);
     let assignedDepartment = null;
     
-    if (user.role === "employee" && user.department) {
-      assignedDepartment = user.department;
-    }
+    assignedDepartment = req.body.department || null;
 
     // Handle file uploads
     const attachments = [];

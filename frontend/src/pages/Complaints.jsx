@@ -60,7 +60,7 @@ export default function Complaints() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // NEW: States for comments and history
+  // States for comments and history
   const [commentText, setCommentText] = useState({});
   const [expandedHistory, setExpandedHistory] = useState({});
   const [complaintHistory, setComplaintHistory] = useState({});
@@ -136,7 +136,7 @@ export default function Complaints() {
     }
   };
 
-  // NEW: Fetch complaint history
+  // Fetch complaint history
   const fetchComplaintHistory = async (complaintId) => {
     setLoadingHistory(prev => ({ ...prev, [complaintId]: true }));
     try {
@@ -151,7 +151,7 @@ export default function Complaints() {
     }
   };
 
-  // NEW: Toggle history expansion
+  // Toggle history expansion
   const toggleHistory = (complaintId) => {
     if (!expandedHistory[complaintId]) {
       fetchComplaintHistory(complaintId);
@@ -192,7 +192,7 @@ export default function Complaints() {
     }
   };
 
-  // MODIFIED: Update status with optional comment
+  // Update status with optional comment
   const updateStatus = async (complaintId, newStatus, comment = null) => {
     try {
       const payload = { status: newStatus };
@@ -254,7 +254,7 @@ export default function Complaints() {
     }
   };
 
-  // NEW: Add comment only (no status change)
+  // Add comment only (no status change)
   const addComment = async (complaintId) => {
     const comment = commentText[complaintId];
     if (!comment || comment.trim() === "") {
@@ -437,7 +437,7 @@ export default function Complaints() {
                       </button>
                     )}
                     
-                    {/* NEW: History Toggle Button */}
+                    {/* History Toggle Button */}
                     <button
                       className="history-toggle-btn"
                       onClick={() => toggleHistory(c._id)}
@@ -446,7 +446,7 @@ export default function Complaints() {
                       {expandedHistory[c._id] ? "Hide" : "View"} History
                     </button>
 
-                    {/* NEW: History Timeline */}
+                    {/* History Timeline */}
                     {expandedHistory[c._id] && (
                       <div style={{ marginTop: "15px" }}>
                         {loadingHistory[c._id] ? (
@@ -570,6 +570,38 @@ export default function Complaints() {
 
                     <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                     <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+
+                    {/* ===== ADMIN COMMENT INPUT ===== */}
+                    <div style={{ marginTop: "10px", display: "flex", gap: "10px", alignItems: "center" }}>
+                      <input
+                        type="text"
+                        placeholder="Write a comment or resolution note..."
+                        value={commentText[c._id] || ""}
+                        onChange={(e) => setCommentText(prev => ({ ...prev, [c._id]: e.target.value }))}
+                        style={{ 
+                          flex: 1, 
+                          padding: "8px", 
+                          borderRadius: "4px", 
+                          border: "1px solid #ccc",
+                          fontSize: "14px"
+                        }}
+                      />
+                      <button
+                        onClick={() => addComment(c._id)}
+                        disabled={submittingComment[c._id]}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#2196F3",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {submittingComment[c._id] ? "Posting..." : "💬 Add Comment"}
+                      </button>
+                    </div>
                     
                     <AttachmentList attachments={c.attachments} />
                     
@@ -648,6 +680,38 @@ export default function Complaints() {
                 <div>Current Status: <strong style={{ color: "#2196f3" }}>{c.status}</strong></div>
                 <div>Created by: {c.createdBy?.name || "Unknown"}</div>
                 <div>Created on: {new Date(c.createdAt).toLocaleString()}</div>
+
+                {/* ===== STAFF COMMENT INPUT ===== */}
+                <div style={{ marginTop: "10px", display: "flex", gap: "10px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    placeholder="Write a comment or resolution note..."
+                    value={commentText[c._id] || ""}
+                    onChange={(e) => setCommentText(prev => ({ ...prev, [c._id]: e.target.value }))}
+                    style={{ 
+                      flex: 1, 
+                      padding: "8px", 
+                      borderRadius: "4px", 
+                      border: "1px solid #ccc",
+                      fontSize: "14px"
+                    }}
+                  />
+                  <button
+                    onClick={() => addComment(c._id)}
+                    disabled={submittingComment[c._id]}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#2196F3",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {submittingComment[c._id] ? "Posting..." : "💬 Add Comment"}
+                  </button>
+                </div>
                 
                 <AttachmentList attachments={c.attachments} />
                 
@@ -691,7 +755,7 @@ export default function Complaints() {
                   </button>
                 )}
 
-                {/* NEW: History Toggle */}
+                {/* History Toggle */}
                 <div style={{ marginTop: "15px" }}>
                   <button
                     className="history-toggle-btn"
@@ -701,7 +765,7 @@ export default function Complaints() {
                   </button>
                 </div>
 
-                {/* NEW: History Timeline */}
+                {/* History Timeline */}
                 {expandedHistory[c._id] && (
                   <div style={{ marginTop: "15px" }}>
                     {loadingHistory[c._id] ? (
