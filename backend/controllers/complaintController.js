@@ -58,7 +58,7 @@ exports.submitComplaint = async (req, res) => {
       title,
       description,
       category,
-      priority: priority || "medium",
+      priority: priority || "low",
       createdBy: req.user.id,
       status: "pending",
       assignedDepartment: assignedDepartment,
@@ -68,7 +68,7 @@ exports.submitComplaint = async (req, res) => {
     // Log complaint creation
     await logAction(complaint._id, req.user.id, "created", {
       comment: `Complaint submitted by ${user.name}`,
-      metadata: { category, priority: priority || "medium", attachmentsCount: attachments.length }
+      metadata: { category, priority: priority || "low", attachmentsCount: attachments.length }
     });
     
     console.log("🔔 Attempting to create notification for admin...");
@@ -666,7 +666,6 @@ exports.escalateComplaint = async (req, res) => {
 
 exports.getDashboardStats = async (req, res) => {
   try {
-    // Check if user is admin
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
@@ -678,15 +677,14 @@ exports.getDashboardStats = async (req, res) => {
     let pendingComplaints = 0;
     let assignedComplaints = 0;
     let inProgressComplaints = 0;
-    
-    let totalResolutionDays = 0;
+    let totalResolutionHours = 0;
     let resolvedCountForAvg = 0;
+
 
     for (let i = 0; i < allComplaints.length; i++) {
       const complaint = allComplaints[i];
       totalComplaints = totalComplaints + 1;
       
-      // Count by status
       if (complaint.status === "pending") {
         pendingComplaints = pendingComplaints + 1;
       } else if (complaint.status === "assigned") {
@@ -695,34 +693,34 @@ exports.getDashboardStats = async (req, res) => {
         inProgressComplaints = inProgressComplaints + 1;
       } else if (complaint.status === "resolved") {
         resolvedComplaints = resolvedComplaints + 1;
-      }
-      
-      // Calculate resolution time for resolved complaints
-      if (complaint.status === "resolved") {
-        if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
-          const createdTime = new Date(complaint.createdAt);
-          const resolvedTime = new Date(complaint.resolvedAt);
-          const differenceInMilliseconds = resolvedTime - createdTime;
-          const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-          totalResolutionDays = totalResolutionDays + differenceInDays;
+        
+        let endDate = complaint.resolvedAt;
+        if (!endDate) {
+          endDate = complaint.updatedAt;
+        }
+        
+        if (endDate) {
+          const startTime = new Date(complaint.createdAt).getTime();
+          const endTime = new Date(endDate).getTime();
+          const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+          totalResolutionHours = totalResolutionHours + diffInHours;
           resolvedCountForAvg = resolvedCountForAvg + 1;
         }
       }
     }
     
-    // Calculate average resolution time
-    let averageResolutionTime = 0;
+    let averageResolutionHours = 0;
     if (resolvedCountForAvg > 0) {
-      averageResolutionTime = totalResolutionDays / resolvedCountForAvg;
-      averageResolutionTime = Number(averageResolutionTime.toFixed(1));
+      averageResolutionHours = totalResolutionHours / resolvedCountForAvg;
+      averageResolutionHours = Number(averageResolutionHours.toFixed(1));
     }
     
-    // Calculate resolution rate
     let resolutionRate = 0;
     if (totalComplaints > 0) {
       resolutionRate = (resolvedComplaints / totalComplaints) * 100;
       resolutionRate = Number(resolutionRate.toFixed(1));
     }
+
 
     const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
     const departmentReport = [];
@@ -735,7 +733,7 @@ exports.getDashboardStats = async (req, res) => {
       let departmentPending = 0;
       let departmentAssigned = 0;
       let departmentInProgress = 0;
-      let departmentTotalResolutionDays = 0;
+      let departmentTotalResolutionHours = 0;
       let departmentResolvedCount = 0;
       
       for (let j = 0; j < allComplaints.length; j++) {
@@ -752,15 +750,17 @@ exports.getDashboardStats = async (req, res) => {
             departmentInProgress = departmentInProgress + 1;
           } else if (complaint.status === "resolved") {
             departmentResolved = departmentResolved + 1;
-          }
-          
-          if (complaint.status === "resolved") {
-            if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
-              const createdTime = new Date(complaint.createdAt);
-              const resolvedTime = new Date(complaint.resolvedAt);
-              const differenceInMilliseconds = resolvedTime - createdTime;
-              const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-              departmentTotalResolutionDays = departmentTotalResolutionDays + differenceInDays;
+            
+            let endDate = complaint.resolvedAt;
+            if (!endDate) {
+              endDate = complaint.updatedAt;
+            }
+            
+            if (endDate) {
+              const startTime = new Date(complaint.createdAt).getTime();
+              const endTime = new Date(endDate).getTime();
+              const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+              departmentTotalResolutionHours = departmentTotalResolutionHours + diffInHours;
               departmentResolvedCount = departmentResolvedCount + 1;
             }
           }
@@ -769,7 +769,7 @@ exports.getDashboardStats = async (req, res) => {
       
       let departmentAverageResolution = 0;
       if (departmentResolvedCount > 0) {
-        departmentAverageResolution = departmentTotalResolutionDays / departmentResolvedCount;
+        departmentAverageResolution = departmentTotalResolutionHours / departmentResolvedCount;
         departmentAverageResolution = Number(departmentAverageResolution.toFixed(1));
       }
       
@@ -791,6 +791,7 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
+
     const priorities = ["low", "medium", "high", "critical"];
     const priorityReport = [];
     
@@ -802,7 +803,7 @@ exports.getDashboardStats = async (req, res) => {
       let priorityPending = 0;
       let priorityAssigned = 0;
       let priorityInProgress = 0;
-      let priorityTotalResolutionDays = 0;
+      let priorityTotalResolutionHours = 0;
       let priorityResolvedCount = 0;
       
       for (let j = 0; j < allComplaints.length; j++) {
@@ -819,15 +820,17 @@ exports.getDashboardStats = async (req, res) => {
             priorityInProgress = priorityInProgress + 1;
           } else if (complaint.status === "resolved") {
             priorityResolved = priorityResolved + 1;
-          }
-          
-          if (complaint.status === "resolved") {
-            if (complaint.resolvedAt !== null && complaint.resolvedAt !== undefined) {
-              const createdTime = new Date(complaint.createdAt);
-              const resolvedTime = new Date(complaint.resolvedAt);
-              const differenceInMilliseconds = resolvedTime - createdTime;
-              const differenceInDays = differenceInMilliseconds / (1000 * 60 * 60 * 24);
-              priorityTotalResolutionDays = priorityTotalResolutionDays + differenceInDays;
+            
+            let endDate = complaint.resolvedAt;
+            if (!endDate) {
+              endDate = complaint.updatedAt;
+            }
+            
+            if (endDate) {
+              const startTime = new Date(complaint.createdAt).getTime();
+              const endTime = new Date(endDate).getTime();
+              const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+              priorityTotalResolutionHours = priorityTotalResolutionHours + diffInHours;
               priorityResolvedCount = priorityResolvedCount + 1;
             }
           }
@@ -836,7 +839,7 @@ exports.getDashboardStats = async (req, res) => {
       
       let priorityAverageResolution = 0;
       if (priorityResolvedCount > 0) {
-        priorityAverageResolution = priorityTotalResolutionDays / priorityResolvedCount;
+        priorityAverageResolution = priorityTotalResolutionHours / priorityResolvedCount;
         priorityAverageResolution = Number(priorityAverageResolution.toFixed(1));
       }
       
@@ -851,6 +854,7 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
+
     res.json({
       success: true,
       summary: {
@@ -859,7 +863,7 @@ exports.getDashboardStats = async (req, res) => {
         pendingComplaints: pendingComplaints,
         assignedComplaints: assignedComplaints,
         inProgressComplaints: inProgressComplaints,
-        averageResolutionTime: averageResolutionTime,
+        averageResolutionTime: averageResolutionHours,
         resolutionRate: resolutionRate
       },
       departmentReport: departmentReport,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const categories = ["Hardware Issue", "Software Issue", "Network Problem", "Salary Dispute", "Leave Request", "Workplace Harassment", "Policy Suggestion", "Other"];
 const statuses = ["pending", "assigned", "in-progress", "resolved"];
-const priorities = ["Low", "Medium", "High", "Critical"];
+const priorities = ["low", "medium", "high", "critical"];
 const departments = ["HR", "IT", "Finance", "Marketing & Sales", "Software & Product Development"];
 
 export default function ComplaintSearch({ onSearch, loading }) {

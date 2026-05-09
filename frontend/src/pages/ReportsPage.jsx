@@ -60,6 +60,7 @@ export default function ReportsPage() {
       });
       if (!res.ok) throw new Error("Failed to fetch dashboard");
       const result = await res.json();
+
       setData(result);
     } catch (err) {
       console.error(err);
@@ -125,7 +126,7 @@ export default function ReportsPage() {
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Assigned</th>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>In Progress</th>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
-                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution (Hours)</th>
               </tr>
             </thead>
             <tbody>
@@ -138,7 +139,7 @@ export default function ReportsPage() {
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.inProgress}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
-                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} days` : "N/A"}
+                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} ` : "N/A"} 
                   </td>
                 </tr>
               ))}
@@ -250,7 +251,7 @@ export default function ReportsPage() {
         </p>
 
         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-          <StatCard label="Overall Avg Resolution" value={`${summary.averageResolutionTime} days`} color="#00bcd4" />
+          <StatCard label="Overall Avg Resolution" value={`${summary.averageResolutionTime} hours`} color="#00bcd4" />
           <StatCard label="Resolved Complaints" value={summary.resolvedComplaints} color="#4caf50" />
           <StatCard label="Resolution Rate" value={`${summary.resolutionRate}%`} color="#795548" />
         </div>
@@ -262,7 +263,7 @@ export default function ReportsPage() {
             <thead>
               <tr style={{ backgroundColor: "#f2f2f2" }}>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Department</th>
-                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time (Hours)</th>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
               </tr>
             </thead>
@@ -271,7 +272,7 @@ export default function ReportsPage() {
                 <tr key={dept.department}>
                   <td style={{ padding: "8px", border: "1px solid #ddd" }}>{dept.department}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
-                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} days` : "N/A"}
+                    {dept.averageResolutionTime ? `${dept.averageResolutionTime} ` : "N/A"}
                   </td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{dept.resolved}</td>
                 </tr>
@@ -287,7 +288,7 @@ export default function ReportsPage() {
             <thead>
               <tr style={{ backgroundColor: "#f2f2f2" }}>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Priority</th>
-                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time</th>
+                <th style={{ padding: "10px", border: "1px solid #ddd" }}>Avg Resolution Time (Hours) </th>
                 <th style={{ padding: "10px", border: "1px solid #ddd" }}>Resolved</th>
               </tr>
             </thead>
@@ -296,7 +297,7 @@ export default function ReportsPage() {
                 <tr key={p.priority}>
                   <td style={{ padding: "8px", border: "1px solid #ddd" }}>{p.priority}</td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>
-                    {p.averageResolutionTime ? `${p.averageResolutionTime} days` : "N/A"}
+                    {p.averageResolutionTime ? `${p.averageResolutionTime} ` : "N/A"}
                   </td>
                   <td style={{ textAlign: "center", padding: "8px", border: "1px solid #ddd" }}>{p.resolved}</td>
                 </tr>
