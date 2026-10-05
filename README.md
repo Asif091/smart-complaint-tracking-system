@@ -1,6 +1,6 @@
 # Smart Complaint & Issue Tracking System
 
-A web-based platform for managing internal organizational complaints — from submission to resolution — with role-based access, full action history, and analytics.
+A web-based platform for managing internal organizational complaints — from submission to resolution — with role-based access, full action history, and analytics for Final Year BRACU Software Engineering (CSE470) Group Project.
 
 **Roles:** Admin · Employee · Staff
 
