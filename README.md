@@ -6,7 +6,7 @@ A web-based platform for managing internal organizational complaints — from su
 **Stack:** React.js · Node.js · Express.js · MongoDB · MVC
 
 > 📄 **Full documentation (SRS, user manual, features, sprint details):**
-> [View SRS Document](docs/SRS_Group_8.pdf) · [Project Documentation](./docs/)
+> [View SRS Document](docs/SRS.pdf) · [Project Documentation](./docs/)
 
 ---
 
