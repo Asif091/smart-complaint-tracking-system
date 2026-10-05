@@ -3,10 +3,12 @@
 A web-based platform for managing internal organizational complaints — from submission to resolution — with role-based access, full action history, and analytics.
 
 **Roles:** Admin · Employee · Staff
+
 **Stack:** React.js · Node.js · Express.js · MongoDB · MVC
 
 > 📄 **Full documentation (SRS, user manual, features, sprint details):**
-> [View SRS Document](docs/SRS.pdf) · [Project Documentation](./docs/)
+> [View SRS Document](docs/SRS.pdf) 
+> [Project Documentation](./docs/)
 
 ---
 
@@ -46,16 +48,3 @@ A web-based platform for managing internal organizational complaints — from su
 | 23101205 | Mohammed Tashfiqul Islam | Frontend (React), dashboards, forms, search & filter |
 | 24101302 | Yasin Musa Saad | Analytics, priority escalation, UML, documentation |
 
----
-
-## How to Deploy
-
-### Prerequisites
-- Node.js v18+
-- MongoDB (local or [Atlas](https://www.mongodb.com/atlas))
-- npm
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/<your-username>/SRS_Group_8.git
-cd SRS_Group_8
